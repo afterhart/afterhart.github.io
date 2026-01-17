@@ -113,33 +113,43 @@
 const video = document.getElementById('intro-video');
 const catalog = document.getElementById('catalog');
 
-let clickedOnce = false;
+// Проверяем, был ли интро уже просмотрен в этой сессии
+const introPlayed = sessionStorage.getItem('introPlayed');
 
-// Обработчик клика
-video.addEventListener('click', () => {
-  if (!clickedOnce) {
-    // Первый клик → включаем звук и продолжаем видео
-    video.muted = false;
-    video.play();
-    clickedOnce = true;
-  } else {
-    // Второй клик → скипаем видео, останавливаем звук, показываем каталог
-    video.pause();          // останавливаем видео
-    video.currentTime = 0;  // сбрасываем на начало (опционально)
-    video.style.display = 'none';
-    catalog.style.display = 'block';
-  }
-});
-
-// Если пользователь не кликает, видео заканчивается автоматически
-video.addEventListener('ended', () => {
+if (introPlayed) {
+  // Интро уже было → показываем каталог сразу
   video.style.display = 'none';
   catalog.style.display = 'block';
-});
+} else {
+  // Интро не было → показываем видео
+  let clickedOnce = false;
+
+  video.addEventListener('click', () => {
+    if (!clickedOnce) {
+      video.muted = false;
+      video.play();
+      clickedOnce = true;
+    } else {
+      video.pause();
+      video.currentTime = 0;
+      video.style.display = 'none';
+      catalog.style.display = 'block';
+      sessionStorage.setItem('introPlayed', 'true'); // помечаем интро просмотренным
+    }
+  });
+
+  video.addEventListener('ended', () => {
+    video.style.display = 'none';
+    catalog.style.display = 'block';
+    sessionStorage.setItem('introPlayed', 'true'); // помечаем интро просмотренным
+  });
+}
 </script>
+
 
 </body>
 </html>
+
 
 
 
