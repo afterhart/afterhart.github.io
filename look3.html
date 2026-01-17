@@ -1,134 +1,132 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>KETA JACKET — AFTERHART</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KETA JACKET — AFTERHART</title>
 
-  <style>
-    @font-face {
-      font-family: 'BrandFont';
-      src: url('fonts/BrandFont.woff2') format('woff2');
-    }
-    @font-face {
-      font-family: 'ItemFont';
-      src: url('fonts/ItemFont.woff2') format('woff2');
-    }
+<style>
+@font-face {
+  font-family: 'BrandFont';
+  src: url('fonts/BrandFont.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'ItemFont';
+  src: url('fonts/ItemFont.woff2') format('woff2');
+}
 
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      text-align: center;
-      font-family: Arial, Helvetica, sans-serif;
-    }
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+}
 
-    .item-name {
-      font-family: 'BrandFont', Arial, Helvetica, sans-serif;
-      font-size: 24px;
-      letter-spacing: 3px;
-      margin: 20px 0 10px;
-    }
+.item-name {
+  font-family: 'BrandFont', Arial, Helvetica, sans-serif;
+  font-size: 26px;
+  letter-spacing: 3px;
+  margin: 40px 0 20px;
+}
 
-    .photos {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+.photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
 
-    @media (max-width: 768px) {
-      .photos {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
+@media (max-width: 768px) {
+  .photos {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
-   .photos img {
+.photos img {
   width: 100%;
   cursor: pointer;
   display: block;
-  pointer-events: auto;
 }
 
-    .item-details {
-      font-family: 'ItemFont', Arial, Helvetica, sans-serif;
-      font-size: 14px;
-      letter-spacing: 1px;
-      line-height: 1.6;
-      margin: 10px 0 40px;
-    }
+.item-details {
+  font-family: 'ItemFont', Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+  margin: 40px 20px;
+}
 
-    .order {
-      display: inline-block;
-      margin: 40px auto 80px;
-      padding: 14px 36px;
-      border: 1px solid #fff;
-      color: #fff;
-      text-decoration: none;
-      letter-spacing: 3px;
-    }
-    .order:hover {
-      background: #fff;
-      color: #000;
-    }
+.order {
+  display: inline-block;
+  margin: 40px auto 80px;
+  padding: 14px 36px;
+  border: 1px solid #fff;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 3px;
+}
 
-    .back {
-      display: block;
-      margin-bottom: 40px;
-      color: #888;
-      text-decoration: none;
-      letter-spacing: 2px;
-    }
+.order:hover {
+  background: #fff;
+  color: #000;
+}
 
-    #lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
+.back {
+  display: block;
+  margin-bottom: 40px;
+  color: #888;
+  text-decoration: none;
+  letter-spacing: 2px;
+}
 
-    .lightbox-content {
-      position: relative;
-      display: inline-block;
-    }
+/* Lightbox */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
 
-    #lightbox-img {
-      max-width: 90vw;
-      max-height: 90vh;
-    }
+.lightbox-content {
+  position: relative;
+}
 
-    .nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 50px;
-      cursor: pointer;
-      padding: 10px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 50%;
-    }
+#lightbox-img {
+  max-width: 90vw;
+  max-height: 90vh;
+}
 
-    .left { left: -60px; }
-    .right { right: -60px; }
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 50px;
+  cursor: pointer;
+  user-select: none;
+}
 
-    .close {
-      position: absolute;
-      top: -50px;
-      right: 0;
-      font-size: 40px;
-      cursor: pointer;
-    }
-  </style>
+.left { left: -50px; }
+.right { right: -50px; }
+
+.close {
+  position: absolute;
+  top: -50px;
+  right: 0;
+  font-size: 40px;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
 
-<p class="item-name">KETA JACKET</p>
+<div class="item-name">KETA JACKET</div>
 
 <div class="photos">
   <img src="look3.jpg">
@@ -136,14 +134,14 @@
   <img src="look3_back.jpg">
 </div>
 
-<p class="item-details">
-  SIZE: F<br>
-  PRICE: 150€<br><br>
-  escape a form<br>
-  escape an art<br>
-  escape a soul<br><br>
-  MADE OF DYED WAXED DENIM
-</p>
+<div class="item-details">
+SIZE: F<br>
+PRICE: 150€<br><br>
+escape a form<br>
+escape an art<br>
+escape a soul<br><br>
+MADE OF DYED WAXED DENIM
+</div>
 
 <a class="order" href="https://instagram.com/afterhart" target="_blank">ORDER VIA INSTAGRAM</a>
 <a class="back" href="index.html">BACK</a>
@@ -174,17 +172,23 @@ imgs.forEach((img, index) => {
   });
 });
 
-function close() { box.style.display = 'none'; }
-
 left.onclick = () => { i = (i - 1 + imgs.length) % imgs.length; boxImg.src = imgs[i].src; };
 right.onclick = () => { i = (i + 1) % imgs.length; boxImg.src = imgs[i].src; };
-closeBtn.onclick = close;
+closeBtn.onclick = () => box.style.display = 'none';
 
 let startX = 0;
 box.addEventListener('touchstart', e => startX = e.touches[0].clientX);
 box.addEventListener('touchend', e => {
   let endX = e.changedTouches[0].clientX;
-  if (startX
+  if (startX - endX > 50) right.click();
+  if (endX - startX > 50) left.click();
+});
+</script>
+
+</body>
+</html>
+
+
 
 
 
