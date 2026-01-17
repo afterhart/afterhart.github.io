@@ -47,7 +47,7 @@
 
   .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* 3+ на больших экранах */
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* ПК, ноутбук */
   gap: 20px;
   padding: 20px;
   max-width: 1000px;
@@ -60,16 +60,15 @@
   display: block;
 }
 
-/* Мобильные устройства (телефон) */
+/* Для экранов шириной до 768px (телефон) */
 @media (max-width: 768px) {
   .grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 фото в ряд */
-    gap: 25px; /* чуть больше отступ */
+    grid-template-columns: repeat(2, 1fr) !important; /* 2 фото в ряд на мобилке */
   }
 
   .item img {
     width: 100%;
-    height: auto; /* фото увеличиваются */
+    height: auto;
   }
 }
 
@@ -166,6 +165,7 @@ if (introPlayed) {
 
 </body>
 </html>
+
 
 
 
