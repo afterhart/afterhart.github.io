@@ -123,7 +123,9 @@ video.addEventListener('click', () => {
     video.play();
     clickedOnce = true;
   } else {
-    // Второй клик → скипаем видео, показываем каталог
+    // Второй клик → скипаем видео, останавливаем звук, показываем каталог
+    video.pause();          // останавливаем видео
+    video.currentTime = 0;  // сбрасываем на начало (опционально)
     video.style.display = 'none';
     catalog.style.display = 'block';
   }
@@ -138,6 +140,7 @@ video.addEventListener('ended', () => {
 
 </body>
 </html>
+
 
 
 
