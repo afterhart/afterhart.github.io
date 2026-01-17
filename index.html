@@ -77,20 +77,31 @@
 }
 
 
-  .item a {
-    display: inline-block;
-    border: 1px solid #fff;
-    color: #fff;
-    text-decoration: none;
-    padding: 10px 20px;
-    letter-spacing: 1px;
-    transition: 0.2s;
-  }
+ .item a {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid #fff;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px;
+  letter-spacing: 1px;
+  transition: 0.2s;
+  height: 100%;          /* одинаковая высота */
+}
 
-  .item a:hover {
-    background: #fff;
-    color: #000;
-  }
+.item img {
+  flex-grow: 1;          /* фото растягивается */
+  object-fit: cover;
+}
+
+.item p {
+  margin: 10px 0 0;
+  min-height: 38px;      /* резерв под 2 строки текста */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 </style>
 </head>
@@ -169,6 +180,7 @@ if (introPlayed) {
 
 </body>
 </html>
+
 
 
 
