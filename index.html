@@ -103,6 +103,17 @@
   align-items: center;
   justify-content: center;
 }
+  
+.grid {
+  column-gap: 20px;
+  row-gap: 35px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    row-gap: 40px;   /* отступ между рядами на телефоне */
+  }
+}
 
 </style>
 </head>
@@ -181,6 +192,7 @@ if (introPlayed) {
 
 </body>
 </html>
+
 
 
 
