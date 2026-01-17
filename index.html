@@ -57,49 +57,33 @@
     cursor: pointer;
   }
 
-  .order {
-    display: block;
-    text-align: center;
-    margin: 60px auto;
+  .item a {
+    display: inline-block;
+    border: 1px solid #fff;
     color: #fff;
     text-decoration: none;
-    border: 1px solid #fff;
-    padding: 14px 30px;
-    width: fit-content;
-    letter-spacing: 2px;
+    padding: 10px 20px;
+    letter-spacing: 1px;
+    transition: 0.2s;
   }
 
-  .order:hover {
+  .item a:hover {
     background: #fff;
     color: #000;
   }
-  .item a {
-  display: inline-block;
-  border: 1px solid #fff;
-  color: #fff;
-  text-decoration: none;
-  padding: 10px 20px;
-  letter-spacing: 1px;
-  transition: 0.2s;
-}
 
-.item a:hover {
-  background: #fff;
-  color: #000;
-}
 </style>
 </head>
 <body>
 
 <!-- Видео-интро -->
 <video id="intro-video" autoplay muted>
-  <source src="intro1.mp4" type="video/mp4">
+  <source src="intro.mp4" type="video/mp4">
   Ваш браузер не поддерживает видео.
 </video>
 
 <!-- Каталог сайта -->
 <div id="catalog">
-
 <header>AFTERHART</header>
 
 <div class="grid">
@@ -129,13 +113,23 @@
 const video = document.getElementById('intro-video');
 const catalog = document.getElementById('catalog');
 
-// Если клик на видео — пропускаем интро
+let clickedOnce = false;
+
+// Обработчик клика
 video.addEventListener('click', () => {
-  video.style.display = 'none';
-  catalog.style.display = 'block';
+  if (!clickedOnce) {
+    // Первый клик → включаем звук и продолжаем видео
+    video.muted = false;
+    video.play();
+    clickedOnce = true;
+  } else {
+    // Второй клик → скипаем видео, показываем каталог
+    video.style.display = 'none';
+    catalog.style.display = 'block';
+  }
 });
 
-// Когда видео заканчивается — показываем каталог
+// Если пользователь не кликает, видео заканчивается автоматически
 video.addEventListener('ended', () => {
   video.style.display = 'none';
   catalog.style.display = 'block';
@@ -144,6 +138,7 @@ video.addEventListener('ended', () => {
 
 </body>
 </html>
+
 
 
 
