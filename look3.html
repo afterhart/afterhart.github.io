@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ESCAPE A FORM — AFTERHART</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000;
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      text-align: center;
+    }
+    header {
+      padding: 40px 20px;
+      letter-spacing: 4px;
+      font-size: 28px;
+    }
+    .photos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .photos img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: pointer;
+    }
+    .info {
+      margin: 40px 20px;
+      letter-spacing: 2px;
+      line-height: 1.6;
+    }
+    .order {
+      display: inline-block;
+      margin: 40px auto 80px;
+      padding: 14px 36px;
+      border: 1px solid #fff;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: 3px;
+    }
+    .order:hover {
+      background: #fff;
+      color: #000;
+    }
+    .back {
+      display: block;
+      margin-top: 40px;
+      color: #888;
+      text-decoration: none;
+      letter-spacing: 2px;
+    }
+
+    /* Lightbox */
+    #lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .lightbox-content {
+      position: relative;
+      display: inline-block;
+    }
+    #lightbox-img {
+      max-width: 90vw;
+      max-height: 90vh;
+      display: block;
+    }
+    .nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 50px;
+      color: #fff;
+      cursor: pointer;
+      user-select: none;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 50%;
+    }
+    .left { left: -60px; }
+    .right { right: -60px; }
+    .close {
+      position: absolute;
+      top: -50px;
+      right: 0;
+      font-size: 40px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<header>ESCAPE A FORM</header>
+
+<div class="photos">
+  <img src="look3.jpg">
+  <img src="look3_side.jpg">
+  <img src="look3_back.jpg">
+</div>
+
+<div class="info">
+  SIZE: F<br>
+  PRICE: 150€<br><br>
+  ESCAPE A FORM<br>
+  ESCAPE AN ART<br>
+  ESCAPE A SOUL<br><br>
+  MADE OF DYED WAXED DENIM
+</div>
+
+<a class="order" href="https://instagram.com/ТВОЙ_НИК" target="_blank">ORDER VIA INSTAGRAM</a>
+<a class="back" href="index.html">BACK</a>
+
+<div id="lightbox">
+  <div class="lightbox-content">
+    <span class="close">×</span>
+    <span class="nav left">‹</span>
+    <img id="lightbox-img">
+    <span class="nav right">›</span>
+  </div>
+</div>
+
+<script>
+const imgs = document.querySelectorAll('.photos img');
+const box = document.getElementById('lightbox');
+const boxImg = document.getElementById('lightbox-img');
+const left = document.querySelector('.left');
+const right = document.querySelector('.right');
+const closeBtn = document.querySelector('.close');
+let i = 0;
+
+imgs.forEach((img, index) => {
+  img.addEventListener('click', () => {
+    i = index;
+    box.style.display = 'flex';
+    boxImg.src = imgs[i].src;
+  });
+});
+
+function close() { box.style.display = 'none'; }
+
+left.onclick = () => { i = (i - 1 + imgs.length) % imgs.length; boxImg.src = imgs[i].src; };
+right.onclick = () => { i = (i + 1) % imgs.length; boxImg.src = imgs[i].src; };
+closeBtn.onclick = close;
+
+let startX = 0;
+box.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+box.addEventListener('touchend', e => {
+  let endX = e.changedTouches[0].clientX;
+  if (startX - endX > 50) right.click();
+  if (endX - startX > 50) left.click();
+});
+</script>
+
+</body>
+</html>
+S
