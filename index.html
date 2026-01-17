@@ -1,107 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AFTERHART</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-    header {
-      text-align: center;
-      padding: 60px 20px;
-      font-size: 32px;
-      letter-spacing: 4px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-      padding: 20px;
-    }
-    .item img {
-      width: 100%;
-      display: block;
-    }
-    .item {
-  text-align: center;
-  font-size: 14px;
-  letter-spacing: 1px;
-}
+<meta charset="UTF-8">
+<title>AFTERHART</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    color: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+  }
 
-.item a {
-  color: #fff;
-  text-decoration: none;
-  display: block;
-}
+  /* Видео на весь экран */
+  #intro-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 9999;
+    cursor: pointer;
+  }
 
-.item p {
-  margin-top: 10px;
-  display: inline-block;
-  padding: 10px 26px;
-  border: 1px solid #fff;
-  letter-spacing: 2px;
-}
+  /* Каталог скрыт пока видео не закончится */
+  #catalog {
+    display: none;
+    text-align: center;
+  }
 
-.item a:hover p {
-  background: #fff;
-  color: #000;
-}
+  header {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 32px;
+    letter-spacing: 4px;
+  }
 
-    }
-    .order {
-      display: block;
-      text-align: center;
-      margin: 60px auto;
-      color: #fff;
-      text-decoration: none;
-      border: 1px solid #fff;
-      padding: 14px 30px;
-      width: fit-content;
-      letter-spacing: 2px;
-    }
-    .order:hover {
-      background: #fff;
-      color: #000;
-    }
-  </style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .item {
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+
+  .item img {
+    width: 100%;
+    display: block;
+    cursor: pointer;
+  }
+
+  .order {
+    display: block;
+    text-align: center;
+    margin: 60px auto;
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid #fff;
+    padding: 14px 30px;
+    width: fit-content;
+    letter-spacing: 2px;
+  }
+
+  .order:hover {
+    background: #fff;
+    color: #000;
+  }
+</style>
 </head>
 <body>
+
+<!-- Видео-интро -->
+<video id="intro-video" autoplay muted>
+  <source src="intro.mp4" type="video/mp4">
+  Ваш браузер не поддерживает видео.
+</video>
+
+<!-- Каталог сайта -->
+<div id="catalog">
 
 <header>AFTERHART</header>
 
 <div class="grid">
-
   <div class="item">
     <a href="look1.html">
       <img src="look1.jpg">
       <p>ANGEL 1</p>
     </a>
   </div>
-
   <div class="item">
     <a href="look2.html">
       <img src="look2.jpg">
       <p>MATTHEW 16:19</p>
     </a>
   </div>
-
   <div class="item">
     <a href="look3.html">
       <img src="look3.jpg">
-      <p>KETA JACKET</p>
+      <p>ESCAPE A FORM</p>
     </a>
   </div>
-
 </div>
 
+</div> <!-- /catalog -->
 
+<script>
+const video = document.getElementById('intro-video');
+const catalog = document.getElementById('catalog');
+
+// Если клик на видео — пропускаем интро
+video.addEventListener('click', () => {
+  video.style.display = 'none';
+  catalog.style.display = 'block';
+});
+
+// Когда видео заканчивается — показываем каталог
+video.addEventListener('ended', () => {
+  video.style.display = 'none';
+  catalog.style.display = 'block';
+});
+</script>
 
 </body>
 </html>
+
 
 
 
