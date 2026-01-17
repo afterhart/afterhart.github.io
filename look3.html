@@ -2,39 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KETA JACKET — AFTERHART</title>
+
   <style>
+    @font-face {
+      font-family: 'BrandFont';
+      src: url('fonts/BrandFont.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'ItemFont';
+      src: url('fonts/ItemFont.woff2') format('woff2');
+    }
+
     body {
       margin: 0;
       background: #000;
       color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
       text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
     }
-    header {
-      padding: 40px 20px;
-      letter-spacing: 4px;
-      font-size: 28px;
+
+    .item-name {
+      font-family: 'BrandFont', Arial, Helvetica, sans-serif;
+      font-size: 24px;
+      letter-spacing: 3px;
+      margin: 20px 0 10px;
     }
+
     .photos {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, 1fr);
       gap: 20px;
       max-width: 900px;
       margin: 0 auto;
       padding: 20px;
     }
+
+    @media (max-width: 768px) {
+      .photos {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     .photos img {
       width: 100%;
-      height: auto;
-      display: block;
       cursor: pointer;
+      display: block;
     }
-    .info {
-      margin: 40px 20px;
-      letter-spacing: 2px;
+
+    .item-details {
+      font-family: 'ItemFont', Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
       line-height: 1.6;
+      margin: 10px 0 40px;
     }
+
     .order {
       display: inline-block;
       margin: 40px auto 80px;
@@ -48,15 +72,15 @@
       background: #fff;
       color: #000;
     }
+
     .back {
       display: block;
-      margin-top: 40px;
+      margin-bottom: 40px;
       color: #888;
       text-decoration: none;
       letter-spacing: 2px;
     }
 
-    /* Lightbox */
     #lightbox {
       position: fixed;
       inset: 0;
@@ -66,29 +90,31 @@
       justify-content: center;
       z-index: 999;
     }
+
     .lightbox-content {
       position: relative;
       display: inline-block;
     }
+
     #lightbox-img {
       max-width: 90vw;
       max-height: 90vh;
-      display: block;
     }
+
     .nav {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       font-size: 50px;
-      color: #fff;
       cursor: pointer;
-      user-select: none;
       padding: 10px;
       background: rgba(0,0,0,0.3);
       border-radius: 50%;
     }
+
     .left { left: -60px; }
     .right { right: -60px; }
+
     .close {
       position: absolute;
       top: -50px;
@@ -98,9 +124,10 @@
     }
   </style>
 </head>
+
 <body>
 
-<header>KETA JACKET</header>
+<p class="item-name">KETA JACKET</p>
 
 <div class="photos">
   <img src="look3.jpg">
@@ -108,14 +135,14 @@
   <img src="look3_back.jpg">
 </div>
 
-<div class="info">
+<p class="item-details">
   SIZE: F<br>
   PRICE: 150€<br><br>
   escape a form<br>
   escape an art<br>
   escape a soul<br><br>
   MADE OF DYED WAXED DENIM
-</div>
+</p>
 
 <a class="order" href="https://instagram.com/afterhart" target="_blank">ORDER VIA INSTAGRAM</a>
 <a class="back" href="index.html">BACK</a>
@@ -156,14 +183,7 @@ let startX = 0;
 box.addEventListener('touchstart', e => startX = e.touches[0].clientX);
 box.addEventListener('touchend', e => {
   let endX = e.changedTouches[0].clientX;
-  if (startX - endX > 50) right.click();
-  if (endX - startX > 50) left.click();
-});
-</script>
-
-</body>
-</html>
-
+  if (startX
 
 
 
