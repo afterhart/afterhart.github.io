@@ -46,10 +46,11 @@
   font-family: 'MyCustomFont', Arial, Helvetica, sans-serif;
 }
 
- .grid {
+.grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* на ПК — 3 фото в ряд */
-  gap: 20px;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 20px;
+  row-gap: 35px;   /* ВОТ ЭТО – расстояние между рядами */
   padding: 20px;
   max-width: 1000px;
   margin: 0 auto;
@@ -180,6 +181,7 @@ if (introPlayed) {
 
 </body>
 </html>
+
 
 
 
