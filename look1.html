@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ANGEL 1</title>
+  <title>ANGEL 1 — AFTERHART</title>
   <style>
     body {
       margin: 0;
@@ -11,33 +11,54 @@
       font-family: Arial, Helvetica, sans-serif;
       text-align: center;
     }
-    h1 {
-      margin-top: 50px;
+    header {
+      padding: 40px 20px;
       letter-spacing: 4px;
+      font-size: 28px;
+    }
+    .photos {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
     }
     .photos img {
-      width: 80%;
-      max-width: 500px;
-      margin: 20px 0;
+      width: 100%;
+      height: auto;
+      display: block;
     }
-    a.back {
-      display: inline-block;
-      margin: 40px;
-      padding: 12px 30px;
-      color: #fff;
-      border: 1px solid #fff;
-      text-decoration: none;
+    .info {
+      margin: 40px 20px;
       letter-spacing: 2px;
+      line-height: 1.6;
     }
-    a.back:hover {
+    .order {
+      display: inline-block;
+      margin: 40px auto 80px;
+      padding: 14px 36px;
+      border: 1px solid #fff;
+      color: #fff;
+      text-decoration: none;
+      letter-spacing: 3px;
+    }
+    .order:hover {
       background: #fff;
       color: #000;
+    }
+    .back {
+      display: block;
+      margin-top: 40px;
+      color: #888;
+      text-decoration: none;
+      letter-spacing: 2px;
     }
   </style>
 </head>
 <body>
 
-<h1>ANGEL 1</h1>
+<header>ANGEL 1</header>
 
 <div class="photos">
   <img src="look1.jpg">
@@ -45,7 +66,16 @@
   <img src="look1_back.jpg">
 </div>
 
+<div class="info">
+  SIZE: F<br>
+  PRICE: 150€<br><br>
+  MADE FROM DETAILS FOUND ON ABANDONED FACTORY
+</div>
+
+<a class="order" href="https://instagram.com/ТВОЙ_НИК" target="_blank">ORDER VIA INSTAGRAM</a>
+
 <a class="back" href="index.html">BACK</a>
 
 </body>
 </html>
+
