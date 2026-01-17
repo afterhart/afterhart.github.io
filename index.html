@@ -45,9 +45,9 @@
   font-family: 'MyCustomFont', Arial, Helvetica, sans-serif;
 }
 
-  .grid {
+ .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); /* ПК, ноутбук */
+  grid-template-columns: repeat(3, 1fr); /* на ПК — 3 фото в ряд */
   gap: 20px;
   padding: 20px;
   max-width: 1000px;
@@ -60,10 +60,10 @@
   display: block;
 }
 
-/* Для экранов шириной до 768px (телефон) */
+/* Мобильные устройства (ширина до 768px) */
 @media (max-width: 768px) {
   .grid {
-    grid-template-columns: repeat(2, 1fr) !important; /* 2 фото в ряд на мобилке */
+    grid-template-columns: repeat(2, 1fr); /* 2 фото в ряд */
   }
 
   .item img {
@@ -165,6 +165,7 @@ if (introPlayed) {
 
 </body>
 </html>
+
 
 
 
