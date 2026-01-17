@@ -45,11 +45,12 @@
       }
     }
 
-    .photos img {
-      width: 100%;
-      cursor: pointer;
-      display: block;
-    }
+   .photos img {
+  width: 100%;
+  cursor: pointer;
+  display: block;
+  pointer-events: auto;
+}
 
     .item-details {
       font-family: 'ItemFont', Arial, Helvetica, sans-serif;
@@ -184,6 +185,7 @@ box.addEventListener('touchstart', e => startX = e.touches[0].clientX);
 box.addEventListener('touchend', e => {
   let endX = e.changedTouches[0].clientX;
   if (startX
+
 
 
 
