@@ -125,6 +125,22 @@
       font-size: 40px;
       cursor: pointer;
     }
+    /* Сетка фото как в каталоге */
+.photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .photos {
+    grid-template-columns: repeat(2, 1fr); /* 2 фото в ряд на телефоне */
+  }
+}
+
   </style>
 </head>
 <body>
@@ -198,6 +214,7 @@ box.addEventListener('touchend', e => {
 
 </body>
 </html>
+
 
 
 
