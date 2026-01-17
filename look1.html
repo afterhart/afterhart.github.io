@@ -3,7 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <title>ANGEL I — AFTERHART</title>
-  <style>
+<style>
+    /* Шрифты */
+    @font-face {
+      font-family: 'BrandFont';
+      src: url('fonts/BrandFont.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'ItemFont';
+      src: url('fonts/ItemFont.woff2') format('woff2');
+    }
+
+    /* Название айтема */
+    .item-name {
+      font-family: 'BrandFont', Arial, Helvetica, sans-serif;
+      font-size: 24px;
+      letter-spacing: 3px;
+      margin: 20px 0 10px;
+      text-align: center;
+    }
+
+    /* Описание, размер, цена */
+    .item-details {
+      font-family: 'ItemFont', Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      letter-spacing: 1px;
+      text-align: center;
+      margin: 10px 0 40px;
+    }
     body {
       margin: 0;
       background: #000;
@@ -109,13 +137,16 @@
 </div>
 
 <div class="info">
-  SIZE: F<br>
-  PRICE: 150€<br><br>
-  The first thing an angel says to a human - do not be afraid.<br>
-  Do not be afraid of the form you take.<br>
-  Do not be afraid of the thoughis that come to you.<br>
-  Do not be afraid of yoursel.<br><br>
-  MADE FROM DETAILS FOUND ON ABANDONED FACTORY
+  <p class="item-name">ANGEL I</p>
+  <p class="item-details">
+    SIZE: F<br>
+    PRICE: 150€<br><br>
+    The first thing an angel says to a human - do not be afraid.<br>
+    Do not be afraid of the form you take.<br>
+    Do not be afraid of the thoughis that come to you.<br>
+    Do not be afraid of yoursel.<br><br>
+    MADE FROM DETAILS FOUND ON ABANDONED FACTORY
+  </p>
 </div>
 
 <a class="order" href="https://instagram.com/afterhart" target="_blank">ORDER VIA INSTAGRAM</a>
@@ -164,6 +195,7 @@ box.addEventListener('touchend', e => {
 
 </body>
 </html>
+
 
 
 
