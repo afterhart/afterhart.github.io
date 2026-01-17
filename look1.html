@@ -105,14 +105,20 @@
   color: #fff;
   cursor: pointer;
   user-select: none;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
 }
 
-.left { left: calc(50% - 460px); }  /* 460px = половина max-width фото + отступ */
-.right { right: calc(50% - 460px); }
+.left { left: 0; }
+.right { right: 0; }
 
-@media(max-width: 1000px) {
-  .left { left: 10px; }
-  .right { right: 10px; }
+#lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  margin: 0 auto;
+  display: block;
+  position: relative;
 }
 
 .close {
@@ -163,6 +169,7 @@ box.addEventListener('touchend', e => {
 
 </body>
 </html>
+
 
 
 
