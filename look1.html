@@ -100,13 +100,21 @@
 .nav {
   position: absolute;
   top: 50%;
+  transform: translateY(-50%);
   font-size: 50px;
   color: #fff;
   cursor: pointer;
   user-select: none;
 }
-.left { left: 30px; }
-.right { right: 30px; }
+
+.left { left: calc(50% - 460px); }  /* 460px = половина max-width фото + отступ */
+.right { right: calc(50% - 460px); }
+
+@media(max-width: 1000px) {
+  .left { left: 10px; }
+  .right { right: 10px; }
+}
+
 .close {
   position: absolute;
   top: 20px;
@@ -155,6 +163,7 @@ box.addEventListener('touchend', e => {
 
 </body>
 </html>
+
 
 
 
