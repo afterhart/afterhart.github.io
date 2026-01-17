@@ -1,128 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>MATTHEW 16:19 — AFTERHART</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000;
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      text-align: center;
-    }
-    header {
-      padding: 40px 20px;
-      letter-spacing: 4px;
-      font-size: 28px;
-    }
-    .photos {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .photos img {
-      width: 100%;
-      height: auto;
-      display: block;
-      cursor: pointer;
-    }
-    .info {
-      margin: 40px 20px;
-      letter-spacing: 2px;
-      line-height: 1.6;
-    }
-    .order {
-      display: inline-block;
-      margin: 40px auto 80px;
-      padding: 14px 36px;
-      border: 1px solid #fff;
-      color: #fff;
-      text-decoration: none;
-      letter-spacing: 3px;
-    }
-    .order:hover {
-      background: #fff;
-      color: #000;
-    }
-    .back {
-      display: block;
-      margin-top: 40px;
-      color: #888;
-      text-decoration: none;
-      letter-spacing: 2px;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MATTHEW 16:19 — AFTERHART</title>
+<style>
+/* Подключаем шрифты */
+@font-face {
+  font-family: 'BrandFont';
+  src: url('fonts/BrandFont.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'ItemFont';
+  src: url('fonts/ItemFont.woff2') format('woff2');
+}
 
-    /* Lightbox */
-    #lightbox {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 999;
-    }
-    .lightbox-content {
-      position: relative;
-      display: inline-block;
-    }
-    #lightbox-img {
-      max-width: 90vw;
-      max-height: 90vh;
-      display: block;
-    }
-    .nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 50px;
-      color: #fff;
-      cursor: pointer;
-      user-select: none;
-      padding: 10px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 50%;
-    }
-    .left { left: -60px; }
-    .right { right: -60px; }
-    .close {
-      position: absolute;
-      top: -50px;
-      right: 0;
-      font-size: 40px;
-      cursor: pointer;
-    }
-  </style>
+/* Стили названия и описания */
+.item-name {
+  font-family: 'BrandFont', Arial, Helvetica, sans-serif;
+  font-size: 24px;
+  letter-spacing: 3px;
+  margin: 20px 0 10px;
+  text-align: center;
+}
+
+.item-details {
+  font-family: 'ItemFont', Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  text-align: center;
+  margin: 10px 0 40px;
+}
+
+/* Общие стили страницы */
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.photos img {
+  width: 300px;
+  height: auto;
+  cursor: pointer;
+}
+
+/* Кнопки */
+.order {
+  display: inline-block;
+  margin: 20px auto 40px;
+  padding: 14px 36px;
+  border: 1px solid #fff;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 3px;
+  transition: 0.2s;
+}
+
+.order:hover {
+  background: #fff;
+  color: #000;
+}
+
+.back {
+  display: block;
+  margin-top: 20px;
+  color: #888;
+  text-decoration: none;
+  letter-spacing: 2px;
+}
+
+/* Лайтбокс */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.lightbox-content {
+  position: relative;
+  display: inline-block;
+}
+
+#lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  display: block;
+}
+
+.nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 50px;
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 50%;
+}
+
+.left { left: -60px; }
+.right { right: -60px; }
+
+.close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 40px;
+  cursor: pointer;
+}
+</style>
 </head>
 <body>
 
-<header>MATTHEW 16:19</header>
+<!-- Название айтема -->
+<div class="item-name">MATTHEW 16:19</div>
 
+<!-- Фотки -->
 <div class="photos">
   <img src="look2.jpg">
   <img src="look2_side.jpg">
   <img src="look2_back.jpg">
-  <img src="look2_detail.jpg"> 
+  <img src="look2_extra.jpg">
 </div>
 
-<div class="info">
+<!-- Описание -->
+<div class="item-details">
   SIZE: F<br>
-  PRICE: 120€<br><br>
-  “And I will give unto thee the keys of the kingdom of heaven:<br>
+  PRICE: 150€<br><br>
+  And I will give unto thee the keys of the kingdom of heaven:<br>
   and whatsoever thou shalt bind on earth shall be bound in heaven:<br>
-  and whatsoever thou shalt loose on earth shall be loosed in heaven.”<br>
-  — Matthew 16:19<br><br>
-  MADE FROM DETAILS FOUND ON ABANDONED FACTORY
+  and whatsoever thou shalt loose on earth shall be loosed in heaven.<br>
+  - Matthew 16:19
 </div>
 
-
-<a class="order" href="https://instagram.com/afterhart" target="_blank">ORDER VIA INSTAGRAM</a>
+<!-- Кнопки -->
+<a class="order" href="https://instagram.com/ТВОЙ_НИК" target="_blank">ORDER VIA INSTAGRAM</a>
 <a class="back" href="index.html">BACK</a>
 
+<!-- Лайтбокс -->
 <div id="lightbox">
   <div class="lightbox-content">
     <span class="close">×</span>
@@ -166,6 +199,8 @@ box.addEventListener('touchend', e => {
 
 </body>
 </html>
+
+
 
 
 
