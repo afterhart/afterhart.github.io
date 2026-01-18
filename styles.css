@@ -10,7 +10,7 @@
 }
 @font-face {
   font-family: 'ItemFont';
-  src: url('fonts/ItemFont.woff2') format('woff2');
+  src: url('fonts/AllFont.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
