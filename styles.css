@@ -1,5 +1,5 @@
 /* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
-/* + hero-pair (intro2/intro3) adjusted to preserve original video height/aspect */
+/* + hero-pair (intro2/intro3); hero height made configurable to avoid crop of details */
 
 /* Локальные шрифты (если есть) */
 @font-face {
@@ -25,6 +25,10 @@
   --sidebar-w: 240px;
   --underline-width: calc(var(--sidebar-w) - 40px);
   --underline-height: 2px;
+
+  /* Параметры hero (intro1) — теперь настраиваемые, чтобы уместить детали видео */
+  --hero-height: 65vh;       /* было 60vh — увеличил, чтобы уменьшить кроп */
+  --hero-min-height: 420px;  /* было 360px — увеличил минимальную высоту */
 
   /* пространство между вертикальными видео */
   --hero-gap: 20px;
@@ -98,15 +102,18 @@ body{
   gap:28px;
 }
 
-/* Hero (video) */
+/* Hero (intro1) — увеличенная высота, минимальная высота поднята */
 .hero{
   position:relative;
   width:100%;
-  height:60vh;
-  min-height:360px;
+  height:var(--hero-height);
+  min-height:var(--hero-min-height);
   border-radius:0;
   overflow:hidden;
   background:#111;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
 .hero-video{
   position:absolute;
@@ -131,7 +138,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  overflow:visible; /* показываем весь вертикальный видео-контент */
+  overflow:visible;
   margin:0;
   padding:0;
 }
@@ -142,7 +149,7 @@ body{
    - фон чёрный, чтобы заполнить возможные поля по бокам. */
 .hero-vertical{
   width:100%;
-  height:auto;            /* не фиксируем высоту — сохраняем исходную пропорцию */
+  height:auto;
   object-fit:contain;
   background: #000;
   display:block;
@@ -150,9 +157,6 @@ body{
 }
 
 /* Catalog / Grid — 4 columns */
-/* ВАЖНО: .main имеет padding:32px, hero занимает ширину внутри .main.
-   Чтобы края сетки совпадали с краями видео, контейнер .grid занимает 100% ширины .main,
-   и внутри карточек УБРАНЫ внешние отступы/бордеры, чтобы изображение доходило до края колонки. */
 .catalog{ width:100%; box-sizing:border-box; }
 .grid{
   display:grid;
@@ -162,7 +166,7 @@ body{
   width:100%;
 }
 
-/* Убираем бордер и padding у карточки — чтобы изображение занимало всю ширину колонки */
+/* Карточки */
 .item{
   display:flex;
   flex-direction:column;
@@ -172,16 +176,12 @@ body{
   display:block;
   text-decoration:none;
   color:var(--fg);
-  padding:0;          /* убрали внутренние отступы */
-  border:0;           /* убрали бордер */
+  padding:0;
+  border:0;
   background:transparent;
   margin:0;
   overflow:hidden;
 }
-
-/* Изображения НЕ обрезаются и не искажаются:
-   - занимают всю ширину колонки по ширине (уменьшаются пропорционально),
-   - height: auto гарантирует отсутствие кропа и искажения. */
 .item img{
   display:block;
   width:100%;
@@ -191,8 +191,6 @@ body{
   transition: transform .18s ease;
   will-change: transform;
 }
-
-/* Подпись под фото — отдельный блок, без бордюра */
 .item p{
   margin:6px 0 0;
   padding:0;
@@ -201,8 +199,6 @@ body{
   text-align:center;
   color:var(--fg);
 }
-
-/* hover — лёгкое увеличение картинки внутри карточки (без кропа) */
 .item a:hover img,
 .item a:focus img{
   transform: scale(1.04);
@@ -220,7 +216,6 @@ body{
   .hero{ height:50vh; min-height:260px; }
   .grid{ grid-template-columns:repeat(2,1fr); gap:16px; }
   .hero-pair{ gap:12px; }
-  .hero-col{ overflow:visible; }
   .hero-vertical{ width:100%; height:auto; }
 }
 @media (max-width:600px){
