@@ -62,45 +62,90 @@
     </section>
   </main>
 
-  <script>
-  // Подсветка активной вкладки + aria-current + поддержка навигации назад/вперёд
-  (function () {
-    const mapPathToPage = (p) => {
-      if (!p || p === '/' || p === '/index.html') return 'main';
-      const name = p.split('/').pop().toLowerCase();
-      if (name === 'index.html' || name === '') return 'main';
-      return name.replace('.html', '');
-    };
+ <script>
+(function () {
+  const mapPathToPage = (p) => {
+    if (!p || p === '/' || p === '/index.html') return 'main';
+    const name = p.split('/').pop().toLowerCase();
+    if (name === 'index.html' || name === '') return 'main';
+    return name.replace('.html', '');
+  };
 
-    const setActive = (page) => {
-      const links = document.querySelectorAll('.nav a[data-page]');
-      links.forEach(a => {
-        const isActive = a.dataset.page === page;
-        a.classList.toggle('active', isActive);
-        if (isActive) a.setAttribute('aria-current', 'page');
-        else a.removeAttribute('aria-current');
+  const links = document.querySelectorAll('.nav a[data-page]');
+
+  const setActive = (page) => {
+    links.forEach(a => {
+      const isActive = a.dataset.page === page;
+      a.classList.toggle('active', isActive);
+      if (isActive) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  };
+
+  // Ставим исходный active по URL (как раньше)
+  const current = mapPathToPage(window.location.pathname);
+  setActive(current);
+
+  // При клике подчёркиваем до перехода
+  links.forEach(a => {
+    a.addEventListener('click', () => {
+      setActive(a.dataset.page);
+    });
+  });
+
+  // Секция hero (видео) и catalog (фотографии)
+  const hero = document.querySelector('.hero');
+  const catalog = document.querySelector('.catalog');
+
+  // Логика: если секция полностью видна (intersectionRatio близко к 1) — делаем её активной.
+  // Для большей надёжности используем порог 0.99 (иногда точный 1.0 ненадёжен).
+  if ('IntersectionObserver' in window && hero && catalog) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.target === catalog && entry.intersectionRatio >= 0.99) {
+          // Фото полностью видны -> catalog active
+          setActive('shop'); // data-page="shop" у пункта Catalog
+        }
+        if (entry.target === hero && entry.intersectionRatio >= 0.99) {
+          // Видео полностью видно -> main active
+          setActive('main');
+        }
       });
-    };
-
-    const current = mapPathToPage(window.location.pathname);
-    setActive(current);
-
-    // Обработчик клика — показывает активность до перехода
-    document.querySelectorAll('.nav a[data-page]').forEach(a => {
-      a.addEventListener('click', () => {
-        setActive(a.dataset.page);
-      });
+    }, {
+      root: null,
+      threshold: [0.0, 0.5, 0.99]
     });
 
-    // Поддержка навигации назад/вперёд
-    window.addEventListener('popstate', () => {
-      setActive(mapPathToPage(window.location.pathname));
-    });
-  })();
+    observer.observe(catalog);
+    observer.observe(hero);
+  } else if (hero && catalog) {
+    // Fallback: проверяем при скролле — считается "полностью видно", если top >=0 и bottom <= viewport height
+    const isFullyVisible = (el) => {
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      return r.top >= 0 && r.bottom <= vh;
+    };
+
+    const onScroll = () => {
+      if (isFullyVisible(catalog)) setActive('shop');
+      else if (isFullyVisible(hero)) setActive('main');
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    // и один запуск при загрузке
+    onScroll();
+  }
+
+  // Поддержка навигации назад/вперёд — сохраняем подсветку по URL
+  window.addEventListener('popstate', () => {
+    setActive(mapPathToPage(window.location.pathname));
+  });
+})();
 </script>
 
 </body>
 </html>
+
 
 
 
