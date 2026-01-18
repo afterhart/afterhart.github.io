@@ -30,14 +30,9 @@
         <source src="intro1.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
-
-      <div class="hero-overlay">
-        <h1 class="hero-title">Main</h1>
-        <p class="hero-sub">New season. New shapes.</p>
-      </div>
     </section>
 
-    <!-- Ниже — каталог/карточки как на старой странице (можно убрать или поменять) -->
+    <!-- Ниже — каталог/карточки -->
     <section class="catalog" aria-label="Catalog">
       <div class="grid">
         <article class="item">
@@ -78,7 +73,6 @@
         if (a.dataset.page === current) a.classList.add('active');
       });
 
-      // Обработчик — чтобы при клике подчёркивалась вкладка до перехода (UX)
       links.forEach(a => {
         a.addEventListener('click', () => {
           links.forEach(x => x.classList.remove('active'));
@@ -90,6 +84,7 @@
 
 </body>
 </html>
+
 
 
 
