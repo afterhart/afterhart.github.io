@@ -1,4 +1,4 @@
-/* Minimalist AFTERHART layout */
+/* Minimalist AFTERHART layout — updated underline + straight corners + natural images */
 /* Поддержка локальных шрифтов (если есть) */
 @font-face {
   font-family: 'BrandFont';
@@ -89,19 +89,36 @@ body{
   position:relative;
   transition:color .15s ease, opacity .15s;
 }
-.nav a:hover{opacity:.85}
 
-/* Подчёркивание активного пункта */
-.nav a.active::after{
-  content:'';
-  position:absolute;
-  left:0;
-  bottom:-6px;
-  height:2px;
-  width:100%;
-  background:var(--accent);
-  border-radius:2px;
+/* Плавное появление подчёркивания — используем transform: scaleX */
+.nav a::after{
+  content: '';
+  position: absolute;
+  left: 0;
+  /* Поднимать подчёркивание ближе к тексту — уменьшили offset */
+  bottom: -2px;
+  height: 2px;
+  width: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .18s ease;
+  opacity: 0.98;
+  border-radius: 1px;
 }
+
+/* При ховере подчёркивание плавно разворачивается */
+.nav a:hover::after{
+  transform: scaleX(1);
+}
+
+/* Активная вкладка — подчёркивание видно (и остаётся) */
+.nav a.active::after,
+.nav a[aria-current="page"]::after{
+  transform: scaleX(1);
+}
+
+.nav a:hover{opacity:.95}
 
 /* Основная область справа */
 .main{
@@ -113,13 +130,14 @@ body{
   gap:28px;
 }
 
-/* Hero — правый блок с видео */
+/* Hero — правый бл��к с видео */
+/* Сделано без скруглений (прямые углы) */
 .hero{
   position:relative;
   width:100%;
   height:60vh;
   min-height:360px;
-  border-radius:6px;
+  border-radius:0;
   overflow:hidden;
   background:#111;
   display:flex;
@@ -135,6 +153,7 @@ body{
   filter:contrast(.9) saturate(.95);
   z-index:0;
   pointer-events:none;
+  border-radius:0;
 }
 
 /* Каталог / grid */
@@ -155,10 +174,16 @@ body{
   gap:12px;
   transition:transform .18s ease, box-shadow .18s ease;
   background:rgba(0,0,0,0.15);
-  border-radius:6px;
+  border-radius:0; /* прямые углы */
 }
 .item a:hover{ transform:translateY(-6px); box-shadow:0 8px 30px rgba(0,0,0,.6)}
-.item img{ width:100%; height:220px; object-fit:cover; border-radius:4px; display:block }
+.item img{
+  width:100%;
+  height:auto;      /* естественная высота — не обрезаем */
+  object-fit:unset; /* убираем обрезание */
+  border-radius:0;  /* прямые углы */
+  display:block;
+}
 .item p{ margin:0; font-size:13px; letter-spacing:1px; text-align:center; font-family:'ItemFont', Arial, Helvetica, sans-serif}
 
 /* Responsive: мобильные устройства */
@@ -179,14 +204,14 @@ body{
   .main{ margin-left:0; padding:20px }
   .hero{ height:50vh; min-height:260px }
   .grid{ grid-template-columns:repeat(2,1fr); gap:18px }
-  .item img{ height:160px }
+  .item img{ height:auto }
 }
 
 /* Very small screens */
 @media (max-width:420px){
   .nav ul{ gap:10px; overflow:auto; -webkit-overflow-scrolling:touch }
   .grid{ grid-template-columns:1fr; }
-  .item img{ height:200px }
+  .item img{ height:auto }
 }
 
 /* Focus styles for accessibility */
