@@ -87,70 +87,79 @@
   links.forEach(a => a.addEventListener('click', () => setActive(a.dataset.page)));
 
   const hero = document.querySelector('.hero');
-  const catalog = document.querySelector('.catalog');
-  if (!hero || !catalog) return;
+  const gridItems = Array.from(document.querySelectorAll('.grid .item'));
 
-  // Порог видимости (0..1). 0.6 = 60% видимости считается "видно".
-  const VISIBLE_THRESHOLD = 0.6;
+  // Если сетки или hero нет — выходим
+  if (!hero || !gridItems.length) return;
 
-  if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
-      let heroRatio = 0;
-      let catalogRatio = 0;
-      entries.forEach(entry => {
-        if (entry.target === hero) heroRatio = entry.intersectionRatio;
-        if (entry.target === catalog) catalogRatio = entry.intersectionRatio;
-      });
+  // Функция: находит элементы первой строки (по минимальному top)
+  const getFirstRowItems = () => {
+    const rects = gridItems.map(it => it.getBoundingClientRect());
+    const tops = rects.map(r => r.top);
+    const minTop = Math.min(...tops);
+    const EPS = 2; // погрешность в пикселях (чтобы избежать дробных погрешностей)
+    return gridItems.filter((it, i) => Math.abs(rects[i].top - minTop) <= EPS);
+  };
 
-      // debug:
-      // console.log('heroRatio=', heroRatio.toFixed(2), 'catalogRatio=', catalogRatio.toFixed(2));
+  const isElementFullyVisible = (el) => {
+    const r = el.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    return r.top >= 0 && r.bottom <= vh;
+  };
 
-      // Если каталог достаточно виден — делаем Catalog активным.
-      if (catalogRatio >= VISIBLE_THRESHOLD) {
-        setActive('shop'); // data-page="shop" у Catalog
-        return;
-      }
+  const isFirstRowFullyVisible = () => {
+    const firstRow = getFirstRowItems();
+    if (!firstRow.length) return false;
+    // верх первой строки и низ
+    const rects = firstRow.map(el => el.getBoundingClientRect());
+    const top = Math.min(...rects.map(r => r.top));
+    const bottom = Math.max(...rects.map(r => r.bottom));
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    return top >= 0 && bottom <= vh;
+  };
 
-      // Если видео достаточно виден — делаем Main активным.
-      if (heroRatio >= VISIBLE_THRESHOLD) {
-        setActive('main');
-        return;
-      }
+  // Throttled scroll/resize handler через requestAnimationFrame
+  let ticking = false;
+  const check = () => {
+    ticking = false;
 
-      // Иначе — оставляем текущее (не переключаем)
-    }, {
-      root: null,
-      threshold: [0, 0.25, 0.5, 0.6, 0.75, 1.0]
-    });
+    // если первая строка полностью видна — активируем Catalog (data-page="shop")
+    if (isFirstRowFullyVisible()) {
+      setActive('shop');
+      return;
+    }
 
-    observer.observe(hero);
-    observer.observe(catalog);
-  } else {
-    // fallback — простой scroll-check
-    const vh = () => window.innerHeight || document.documentElement.clientHeight;
-    const getRatio = (el) => {
-      const r = el.getBoundingClientRect();
-      const visibleHeight = Math.max(0, Math.min(r.bottom, vh()) - Math.max(r.top, 0));
-      return visibleHeight / r.height;
-    };
-    const onScroll = () => {
-      const heroRatio = getRatio(hero);
-      const catalogRatio = getRatio(catalog);
-      // console.log('fallback hero=', heroRatio, 'catalog=', catalogRatio);
-      if (catalogRatio >= VISIBLE_THRESHOLD) setActive('shop');
-      else if (heroRatio >= VISIBLE_THRESHOLD) setActive('main');
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-  }
+    // иначе, если видео полностью видно — активируем Main
+    if (isElementFullyVisible(hero)) {
+      setActive('main');
+      return;
+    }
 
-  // поддержка back/forward
+    // иначе оставляем текущую подсветку (ничего не меняем)
+  };
+
+  const onScrollOrResize = () => {
+    if (!ticking) {
+      requestAnimationFrame(check);
+      ticking = true;
+    }
+  };
+
+  window.addEventListener('scroll', onScrollOrResize, { passive: true });
+  window.addEventListener('resize', onScrollOrResize);
+  // проверка при загрузке
+  window.addEventListener('load', onScrollOrResize);
+  // и однократная начальная проверка
+  onScrollOrResize();
+
+  // поддержка history (back/forward)
   window.addEventListener('popstate', () => setActive(mapPathToPage(window.location.pathname)));
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
