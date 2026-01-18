@@ -62,17 +62,9 @@
     </section>
   </main>
 
- <script>
+<script>
 (function () {
-  const mapPathToPage = (p) => {
-    if (!p || p === '/' || p === '/index.html') return 'main';
-    const name = p.split('/').pop().toLowerCase();
-    if (name === 'index.html' || name === '') return 'main';
-    return name.replace('.html', '');
-  };
-
   const links = document.querySelectorAll('.nav a[data-page]');
-
   const setActive = (page) => {
     links.forEach(a => {
       const isActive = a.dataset.page === page;
@@ -82,69 +74,84 @@
     });
   };
 
-  // Ставим исходный active по URL (как раньше)
-  const current = mapPathToPage(window.location.pathname);
-  setActive(current);
+  // исходная подсветка по URL
+  const mapPathToPage = (p) => {
+    if (!p || p === '/' || p === '/index.html') return 'main';
+    const name = p.split('/').pop().toLowerCase();
+    if (name === 'index.html' || name === '') return 'main';
+    return name.replace('.html', '');
+  };
+  setActive(mapPathToPage(window.location.pathname));
 
-  // При клике подчёркиваем до перехода
-  links.forEach(a => {
-    a.addEventListener('click', () => {
-      setActive(a.dataset.page);
-    });
-  });
+  // клики — мгновенно подсвечиваем
+  links.forEach(a => a.addEventListener('click', () => setActive(a.dataset.page)));
 
-  // Секция hero (видео) и catalog (фотографии)
   const hero = document.querySelector('.hero');
   const catalog = document.querySelector('.catalog');
+  if (!hero || !catalog) return;
 
-  // Логика: если секция полностью видна (intersectionRatio близко к 1) — делаем её активной.
-  // Для большей надёжности используем порог 0.99 (иногда точный 1.0 ненадёжен).
-  if ('IntersectionObserver' in window && hero && catalog) {
+  // Порог видимости (0..1). 0.6 = 60% видимости считается "видно".
+  const VISIBLE_THRESHOLD = 0.6;
+
+  if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
+      let heroRatio = 0;
+      let catalogRatio = 0;
       entries.forEach(entry => {
-        if (entry.target === catalog && entry.intersectionRatio >= 0.99) {
-          // Фото полностью видны -> catalog active
-          setActive('shop'); // data-page="shop" у пункта Catalog
-        }
-        if (entry.target === hero && entry.intersectionRatio >= 0.99) {
-          // Видео полностью видно -> main active
-          setActive('main');
-        }
+        if (entry.target === hero) heroRatio = entry.intersectionRatio;
+        if (entry.target === catalog) catalogRatio = entry.intersectionRatio;
       });
+
+      // debug:
+      // console.log('heroRatio=', heroRatio.toFixed(2), 'catalogRatio=', catalogRatio.toFixed(2));
+
+      // Если каталог достаточно виден — делаем Catalog активным.
+      if (catalogRatio >= VISIBLE_THRESHOLD) {
+        setActive('shop'); // data-page="shop" у Catalog
+        return;
+      }
+
+      // Если видео достаточно виден — делаем Main активным.
+      if (heroRatio >= VISIBLE_THRESHOLD) {
+        setActive('main');
+        return;
+      }
+
+      // Иначе — оставляем текущее (не переключаем)
     }, {
       root: null,
-      threshold: [0.0, 0.5, 0.99]
+      threshold: [0, 0.25, 0.5, 0.6, 0.75, 1.0]
     });
 
-    observer.observe(catalog);
     observer.observe(hero);
-  } else if (hero && catalog) {
-    // Fallback: проверяем при скролле — считается "полностью видно", если top >=0 и bottom <= viewport height
-    const isFullyVisible = (el) => {
+    observer.observe(catalog);
+  } else {
+    // fallback — простой scroll-check
+    const vh = () => window.innerHeight || document.documentElement.clientHeight;
+    const getRatio = (el) => {
       const r = el.getBoundingClientRect();
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      return r.top >= 0 && r.bottom <= vh;
+      const visibleHeight = Math.max(0, Math.min(r.bottom, vh()) - Math.max(r.top, 0));
+      return visibleHeight / r.height;
     };
-
     const onScroll = () => {
-      if (isFullyVisible(catalog)) setActive('shop');
-      else if (isFullyVisible(hero)) setActive('main');
+      const heroRatio = getRatio(hero);
+      const catalogRatio = getRatio(catalog);
+      // console.log('fallback hero=', heroRatio, 'catalog=', catalogRatio);
+      if (catalogRatio >= VISIBLE_THRESHOLD) setActive('shop');
+      else if (heroRatio >= VISIBLE_THRESHOLD) setActive('main');
     };
-
     window.addEventListener('scroll', onScroll, { passive: true });
-    // и один запуск при загрузке
     onScroll();
   }
 
-  // Поддержка навигации назад/вперёд — сохраняем подсветку по URL
-  window.addEventListener('popstate', () => {
-    setActive(mapPathToPage(window.location.pathname));
-  });
+  // поддержка back/forward
+  window.addEventListener('popstate', () => setActive(mapPathToPage(window.location.pathname)));
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
