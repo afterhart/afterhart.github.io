@@ -1,214 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AFTERHART</title>
-<style>
- @font-face {
-  font-family: 'BrandFont';
-  src: url('fonts/BrandFont.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'ItemFont';
-  src: url('fonts/ItemFont.woff2') format('woff2');
-}
-header {
-  text-align: center;
-  padding: 60px 20px;
-  font-size: 32px;
-  letter-spacing: 4px;
-  font-family: 'BrandFont', Arial, Helvetica, sans-serif;
-}
-
-.item p {
-  font-family: 'ItemFont', Arial, Helvetica, sans-serif;
-  font-size: 14px;
-  letter-spacing: 2px;
-  margin: 10px 0 0;
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-  body {
-    margin: 0;
-    background: #000;
-    color: #fff;
-    font-family: Arial, Helvetica, sans-serif;
-  }
-
-  /* Видео на весь экран */
-  #intro-video {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 9999;
-    cursor: pointer;
-  }
-
-  /* Каталог скрыт пока видео не закончится */
-  #catalog {
-    display: none;
-    text-align: center;
-  }
-
- header {
-  text-align: center;
-  padding: 60px 20px;
-  font-size: 32px;
-  letter-spacing: 4px;
-  font-family: 'BrandFont', Arial, Helvetica, sans-serif;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  column-gap: 20px;
-  row-gap: 35px;   /* ВОТ ЭТО – расстояние между рядами */
-  padding: 20px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.item img {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Мобильные устройства */
-@media (max-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr); /* 2 фото в ряд */
-    max-width: 600px; /* чтобы колонки были крупнее */
-    margin: 0 auto;   /* центрируем */
-    gap: 20px;
-  }
-
-  .item img {
-    width: 100%;
-    height: auto;
-  }
-}
-
-
- .item a {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  border: 1px solid #fff;
-  color: #fff;
-  text-decoration: none;
-  padding: 10px;
-  letter-spacing: 1px;
-  transition: 0.2s;
-  height: 100%;          /* одинаковая высота */
-}
-
-.item img {
-  flex-grow: 1;          /* фото растягивается */
-  object-fit: cover;
-}
-
-.item p {
-  margin: 10px 0 0;
-  min-height: 38px;      /* резерв под 2 строки текста */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-  
-.grid {
-  column-gap: 20px;
-  row-gap: 35px;
-}
-
-@media (max-width: 768px) {
-  .grid {
-    row-gap: 40px;   /* отступ между рядами на телефоне */
-  }
-}
-
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AFTERHART — Main</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-<!-- Видео-интро -->
-<video id="intro-video" autoplay muted>
-  <source src="intro1.mp4" type="video/mp4">
-  Ваш браузер не поддерживает видео.
-</video>
+  <a class="skip-link" href="#main">Skip to content</a>
 
-<!-- Каталог сайта -->
-<div id="catalog">
-<header>AFTERHART</header>
+  <aside class="sidebar" aria-label="Primary">
+    <div class="brand">AFTERHART</div>
 
-<div class="grid">
-  <div class="item">
-    <a href="look1.html">
-      <img src="look1.jpg">
-      <p>ANGEL I</p>
-    </a>
-  </div>
-  <div class="item">
-    <a href="look2.html">
-      <img src="look2.jpg">
-      <p>MATTHEW 16:19</p>
-    </a>
-  </div>
-  <div class="item">
-    <a href="look3.html">
-      <img src="look3.jpg">
-      <p>KETA JACKET</p>
-    </a>
-  </div>
-</div>
+    <nav class="nav" aria-label="Main navigation">
+      <ul>
+        <li><a href="index.html" data-page="main">Main</a></li>
+        <li><a href="shop.html" data-page="shop">Shop</a></li>
+        <li><a href="gallery.html" data-page="gallery">Gallery</a></li>
+        <li><a href="bio.html" data-page="bio">Bio</a></li>
+      </ul>
+    </nav>
+  </aside>
 
-</div> <!-- /catalog -->
+  <main id="main" class="main" role="main" tabindex="-1">
+    <section class="hero" aria-hidden="false">
+      <!-- Видео-плеер — muted, autoplay, loop, playsinline -->
+      <video id="hero-video" class="hero-video" autoplay muted loop playsinline preload="auto" poster="poster.jpg" aria-label="Background video">
+        <source src="intro1.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
 
-<script>
-const video = document.getElementById('intro-video');
-const catalog = document.getElementById('catalog');
+      <div class="hero-overlay">
+        <h1 class="hero-title">Main</h1>
+        <p class="hero-sub">New season. New shapes.</p>
+      </div>
+    </section>
 
-// Проверяем, был ли интро уже просмотрен в этой сессии
-const introPlayed = sessionStorage.getItem('introPlayed');
+    <!-- Ниже — каталог/карточки как на старой странице (можно убрать или поменять) -->
+    <section class="catalog" aria-label="Catalog">
+      <div class="grid">
+        <article class="item">
+          <a href="look1.html">
+            <img src="look1.jpg" alt="ANGEL I" loading="lazy" />
+            <p>ANGEL I</p>
+          </a>
+        </article>
+        <article class="item">
+          <a href="look2.html">
+            <img src="look2.jpg" alt="MATTHEW 16:19" loading="lazy" />
+            <p>MATTHEW 16:19</p>
+          </a>
+        </article>
+        <article class="item">
+          <a href="look3.html">
+            <img src="look3.jpg" alt="KETA JACKET" loading="lazy" />
+            <p>KETA JACKET</p>
+          </a>
+        </article>
+      </div>
+    </section>
+  </main>
 
-if (introPlayed) {
-  // Интро уже было → показываем каталог сразу
-  video.style.display = 'none';
-  catalog.style.display = 'block';
-} else {
-  // Интро не было → показываем видео
-  let clickedOnce = false;
+  <script>
+    // Подчеркивание активной вкладки
+    (function () {
+      const mapPathToPage = (p) => {
+        if (!p || p === '/' || p === '/index.html') return 'main';
+        const name = p.split('/').pop().toLowerCase();
+        if (name === 'index.html' || name === '') return 'main';
+        return name.replace('.html', '');
+      };
 
-  video.addEventListener('click', () => {
-    if (!clickedOnce) {
-      video.muted = false;
-      video.play();
-      clickedOnce = true;
-    } else {
-      video.pause();
-      video.currentTime = 0;
-      video.style.display = 'none';
-      catalog.style.display = 'block';
-      sessionStorage.setItem('introPlayed', 'true'); // помечаем интро просмотренным
-    }
-  });
+      const current = mapPathToPage(window.location.pathname);
+      const links = document.querySelectorAll('.nav a[data-page]');
+      links.forEach(a => {
+        if (a.dataset.page === current) a.classList.add('active');
+      });
 
-  video.addEventListener('ended', () => {
-    video.style.display = 'none';
-    catalog.style.display = 'block';
-    sessionStorage.setItem('introPlayed', 'true'); // помечаем интро просмотренным
-  });
-}
-</script>
-
+      // Обработчик — чтобы при клике подчёркивалась вкладка до перехода (UX)
+      links.forEach(a => {
+        a.addEventListener('click', () => {
+          links.forEach(x => x.classList.remove('active'));
+          a.classList.add('active');
+        });
+      });
+    })();
+  </script>
 
 </body>
 </html>
