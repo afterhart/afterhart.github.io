@@ -1,5 +1,5 @@
 /* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
-/* + hero-pair (intro2/intro3) added */
+/* + hero-pair (intro2/intro3) adjusted to preserve original video height/aspect */
 
 /* Локальные шрифты (если есть) */
 @font-face {
@@ -25,9 +25,6 @@
   --sidebar-w: 240px;
   --underline-width: calc(var(--sidebar-w) - 40px);
   --underline-height: 2px;
-
-  /* высота вертикальных интро; одинаковая для intro2/intro3 */
-  --vertical-intro-height: 40vh;
 
   /* пространство между вертикальными видео */
   --hero-gap: 20px;
@@ -134,16 +131,20 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  overflow:hidden;
+  overflow:visible; /* показываем весь вертикальный видео-контент */
   margin:0;
   padding:0;
 }
 
-/* Вертикальные видео: одинаковая высота, ширина растягивается пропорционально картинке */
+/* Вертикальные видео: сохраняем оригинальную пропорцию/высоту
+   - ширина видео подстраивается под колонку (100%), высота авто;
+   - object-fit: contain гарантирует, что содержимое не будет обрезано;
+   - фон чёрный, чтобы заполнить возможные поля по бокам. */
 .hero-vertical{
   width:100%;
-  height:var(--vertical-intro-height);
-  object-fit:cover;
+  height:auto;            /* не фиксируем высоту — сохраняем исходную пропорцию */
+  object-fit:contain;
+  background: #000;
   display:block;
   border-radius:0;
 }
@@ -219,13 +220,14 @@ body{
   .hero{ height:50vh; min-height:260px; }
   .grid{ grid-template-columns:repeat(2,1fr); gap:16px; }
   .hero-pair{ gap:12px; }
-  .hero-vertical{ height:28vh; }
+  .hero-col{ overflow:visible; }
+  .hero-vertical{ width:100%; height:auto; }
 }
 @media (max-width:600px){
   .grid{ grid-template-columns:1fr; }
   .nav a::after{ width:72px; }
   .hero-pair{ flex-direction:column; gap:12px; }
-  .hero-vertical{ width:100%; height:40vh; }
+  .hero-vertical{ width:100%; height:auto; }
 }
 
 /* Accessibility focus */
