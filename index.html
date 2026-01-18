@@ -74,7 +74,6 @@
     });
   };
 
-  // исходная подсветка по URL
   const mapPathToPage = (p) => {
     if (!p || p === '/' || p === '/index.html') return 'main';
     const name = p.split('/').pop().toLowerCase();
@@ -82,23 +81,39 @@
     return name.replace('.html', '');
   };
   setActive(mapPathToPage(window.location.pathname));
-
-  // клики — мгновенно подсвечиваем
   links.forEach(a => a.addEventListener('click', () => setActive(a.dataset.page)));
 
   const hero = document.querySelector('.hero');
-  const gridItems = Array.from(document.querySelectorAll('.grid .item'));
+  const grid = document.querySelector('.grid');
+  if (!hero || !grid) return;
 
-  // Если сетки или hero нет — выходим
-  if (!hero || !gridItems.length) return;
+  let gridItems = Array.from(grid.querySelectorAll('.item'));
+  let firstRowItems = [];
 
-  // Функция: находит элементы первой строки (по минимальному top)
-  const getFirstRowItems = () => {
+  // Ждём загрузки всех изображений внутри grid, чтобы расчёты были корректными
+  const waitForGridImages = () => {
+    const imgs = Array.from(grid.querySelectorAll('img'));
+    const promises = imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        img.addEventListener('load', resolve, { once: true });
+        img.addEventListener('error', resolve, { once: true });
+      });
+    });
+    return Promise.all(promises);
+  };
+
+  const EPS = 3; // допуск в px для сравнения top
+
+  const updateFirstRowItems = () => {
+    gridItems = Array.from(grid.querySelectorAll('.item'));
+    if (!gridItems.length) { firstRowItems = []; return; }
     const rects = gridItems.map(it => it.getBoundingClientRect());
     const tops = rects.map(r => r.top);
     const minTop = Math.min(...tops);
-    const EPS = 2; // погрешность в пикселях (чтобы избежать дробных погрешностей)
-    return gridItems.filter((it, i) => Math.abs(rects[i].top - minTop) <= EPS);
+    firstRowItems = gridItems.filter((it, i) => Math.abs(rects[i].top - minTop) <= EPS);
+    // debug
+    console.debug('firstRow count=', firstRowItems.length);
   };
 
   const isElementFullyVisible = (el) => {
@@ -108,57 +123,74 @@
   };
 
   const isFirstRowFullyVisible = () => {
-    const firstRow = getFirstRowItems();
-    if (!firstRow.length) return false;
-    // верх первой строки и низ
-    const rects = firstRow.map(el => el.getBoundingClientRect());
+    if (!firstRowItems.length) return false;
+    const rects = firstRowItems.map(el => el.getBoundingClientRect());
     const top = Math.min(...rects.map(r => r.top));
     const bottom = Math.max(...rects.map(r => r.bottom));
     const vh = window.innerHeight || document.documentElement.clientHeight;
+    // debug
+    console.debug('firstRow top,bottom,vh=', Math.round(top), Math.round(bottom), vh);
     return top >= 0 && bottom <= vh;
   };
 
-  // Throttled scroll/resize handler через requestAnimationFrame
-  let ticking = false;
-  const check = () => {
-    ticking = false;
+  // Инициализируем: ждём загрузки картинок, затем считаем первую строку и запускаем обработчики
+  waitForGridImages().then(() => {
+    updateFirstRowItems();
+    // начальная проверка
+    requestAnimationFrame(() => {
+      if (isFirstRowFullyVisible()) setActive('shop');
+      else if (isElementFullyVisible(hero)) setActive('main');
+    });
+  });
 
-    // если первая строка полностью видна — активируем Catalog (data-page="shop")
-    if (isFirstRowFullyVisible()) {
-      setActive('shop');
-      return;
-    }
-
-    // иначе, если видео полностью видно — активируем Main
-    if (isElementFullyVisible(hero)) {
-      setActive('main');
-      return;
-    }
-
-    // иначе оставляем текущую подсветку (ничего не меняем)
+  // при ресайзе пересчитываем первую строку (адаптив меняет количество колонок)
+  let resizeTimer;
+  const onResize = () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      updateFirstRowItems();
+      // и сразу проверим состояние
+      if (isFirstRowFullyVisible()) setActive('shop');
+      else if (isElementFullyVisible(hero)) setActive('main');
+    }, 150);
   };
+  window.addEventListener('resize', onResize);
 
-  const onScrollOrResize = () => {
+  // Throttled scroll handler через rAF
+  let ticking = false;
+  const onScroll = () => {
     if (!ticking) {
-      requestAnimationFrame(check);
+      requestAnimationFrame(() => {
+        // Приоритет: если первая строка полностью видна -> Catalog
+        if (isFirstRowFullyVisible()) {
+          setActive('shop');
+        } else if (isElementFullyVisible(hero)) {
+          setActive('main');
+        }
+        ticking = false;
+      });
       ticking = true;
     }
   };
+  window.addEventListener('scroll', onScroll, { passive: true });
 
-  window.addEventListener('scroll', onScrollOrResize, { passive: true });
-  window.addEventListener('resize', onScrollOrResize);
-  // проверка при загрузке
-  window.addEventListener('load', onScrollOrResize);
-  // и однократная начальная проверка
-  onScrollOrResize();
+  // Если динамически добавляете/удаляете элементы, пересчитываем через MutationObserver
+  const mo = new MutationObserver(() => {
+    // подождём чуть-чуть чтобы DOM произвёл рендер
+    setTimeout(() => {
+      waitForGridImages().then(updateFirstRowItems);
+    }, 60);
+  });
+  mo.observe(grid, { childList: true, subtree: true });
 
-  // поддержка history (back/forward)
-  window.addEventListener('popstate', () => setActive(mapPathToPage(window.location.pathname)));
+  // очистка при выходе (опционально)
+  // window.addEventListener('beforeunload', () => mo.disconnect());
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
