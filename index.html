@@ -132,10 +132,11 @@
     console.debug('firstRow count=', firstRowItems.length);
   };
 
+  const vh = () => window.innerHeight || document.documentElement.clientHeight;
+
   const isElementFullyVisible = (el) => {
     const r = el.getBoundingClientRect();
-    const vh = window.innerHeight || document.documentElement.clientHeight;
-    return r.top >= 0 && r.bottom <= vh;
+    return r.top >= 0 && r.bottom <= vh();
   };
 
   const isFirstRowFullyVisible = () => {
@@ -143,10 +144,19 @@
     const rects = firstRowItems.map(el => el.getBoundingClientRect());
     const top = Math.min(...rects.map(r => r.top));
     const bottom = Math.max(...rects.map(r => r.bottom));
-    const vh = window.innerHeight || document.documentElement.clientHeight;
     // debug
-    console.debug('firstRow top,bottom,vh=', Math.round(top), Math.round(bottom), vh);
-    return top >= 0 && bottom <= vh;
+    console.debug('firstRow top,bottom,vh=', Math.round(top), Math.round(bottom), vh());
+    return top >= 0 && bottom <= vh();
+  };
+
+  // Новая: проверяет, видна ли хотя бы часть первой строки
+  const isFirstRowAnyVisible = () => {
+    if (!firstRowItems.length) return false;
+    const rects = firstRowItems.map(el => el.getBoundingClientRect());
+    const top = Math.min(...rects.map(r => r.top));
+    const bottom = Math.max(...rects.map(r => r.bottom));
+    // видима, если есть пересечение с viewport
+    return !(bottom <= 0 || top >= vh());
   };
 
   // Инициализируем: ждём загрузки картинок, затем считаем первую строку и запускаем обработчики
@@ -155,6 +165,7 @@
     // начальная проверка
     requestAnimationFrame(() => {
       if (isFirstRowFullyVisible()) setActive('catalog');
+      else if (!isFirstRowAnyVisible()) setActive('main'); // если первая строка вообще не видна -> main
       else if (isElementFullyVisible(hero)) setActive('main');
     });
   });
@@ -167,6 +178,7 @@
       updateFirstRowItems();
       // и сразу проверим состояние
       if (isFirstRowFullyVisible()) setActive('catalog');
+      else if (!isFirstRowAnyVisible()) setActive('main');
       else if (isElementFullyVisible(hero)) setActive('main');
     }, 150);
   };
@@ -180,7 +192,11 @@
         // Приоритет: если первая строка полностью видна -> Catalog
         if (isFirstRowFullyVisible()) {
           setActive('catalog');
+        } else if (!isFirstRowAnyVisible()) {
+          // если первая строка совсем не видна (например, смотрим intro2/intro3) -> Main
+          setActive('main');
         } else if (isElementFullyVisible(hero)) {
+          // иначе, если видно полностью hero -> main
           setActive('main');
         }
         ticking = false;
