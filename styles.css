@@ -178,6 +178,19 @@ body{
   .grid{ grid-template-columns:1fr; }
   .nav a::after{ width:72px; }
 }
+/* hover — лёгкое увеличение картинки внутри карточки (без кропа), и скрываем выход за границу */
+.item a {
+  overflow: hidden;
+}
 
+.item img {
+  transition: transform .18s ease;
+  will-change: transform;
+}
+
+.item a:hover img,
+.item a:focus img {
+  transform: scale(1.04);
+}
 /* Accessibility focus */
 a:focus{ outline:2px solid rgba(255,255,255,.12); outline-offset:2px; border-radius:4px }
