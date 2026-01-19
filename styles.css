@@ -237,3 +237,61 @@ a:focus:not(.nav a) {
   outline-offset: 2px;
   border-radius: 4px;
 }
+/* ===== Gallery mosaic (add/ensure this is present in styles.css) ===== */
+.gallery{
+  width:100%;
+  box-sizing:border-box;
+  margin-top: 12px;
+}
+
+:root {
+  --gallery-gap: 6px;    /* тонкие щели между фото */
+  --gallery-row: 8vw;    /* базовая высота ряда, responsive */
+}
+
+/* Гибкая грид-сетка: 12 колонок для более точного позиционирования */
+.gallery-grid{
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: var(--gallery-row);
+  gap: var(--gallery-gap);
+}
+
+/* Плитка и изображение внутри */
+.gallery-item{
+  display:block;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  margin:0;
+  padding:0;
+  background:#000;
+}
+.gallery-item img{
+  width:100%;
+  height:100%;
+  object-fit:cover;   /* плотная обрезка — сетка впритык */
+  display:block;
+  vertical-align:middle;
+}
+
+/* span-классы: меняют ширину/высоту плитки в ячейках */
+.span-1{ grid-column: span 1; grid-row: span 1; }
+.span-2{ grid-column: span 2; grid-row: span 1; }
+.span-3{ grid-column: span 3; grid-row: span 1; }
+.span-4{ grid-column: span 4; grid-row: span 2; }
+.span-6{ grid-column: span 6; grid-row: span 2; }
+.span-8{ grid-column: span 8; grid-row: span 3; }
+
+/* Mobile adjustments */
+@media (max-width:900px){
+  :root{ --gallery-row: 18vw; }
+  .gallery-grid{ grid-template-columns: repeat(6, 1fr); }
+  .span-6{ grid-column: span 6; grid-row: span 2; }
+  .span-4{ grid-column: span 3; grid-row: span 2; }
+}
+@media (max-width:600px){
+  :root{ --gallery-row: 26vw; }
+  .gallery-grid{ grid-template-columns: repeat(4, 1fr); }
+  .span-6{ grid-column: span 4; grid-row: span 2; }
+}
