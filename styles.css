@@ -1,8 +1,6 @@
 
-/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge
-   Updated: gallery switched to masonry (CSS columns) to remove empty holes/gaps.
-   If you prefer strict row-order (no column flow), I can instead add a tiny JS masonry/packer.
-*/
+/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
+/* + hero-pair (intro2/intro3); hero height configurable; improved focus handling */
 
 /* Локальные шрифты (если есть) */
 @font-face {
@@ -36,7 +34,7 @@
   /* пространство между вертикальными видео */
   --hero-gap: 20px;
 
-  /* Gallery (masonry) */
+  /* Gallery */
   --gallery-gap: 6px;                    /* щели между плитками */
   --gallery-column-width: 280px;         /* базовая ширина колонки (адаптивно) */
   --gallery-column-count-desktop: 4;
@@ -102,8 +100,13 @@ body{
   transform:scaleX(1);
 }
 
-/* Remove focus ring on mouse click but keep it for keyboard users */
-.nav a:focus { outline: none; }
+/* Remove focus ring on mouse click but keep it for keyboard users:
+   - hide focus outline for .nav a unless it matches :focus-visible
+   - show a subtle outline when navigated via keyboard (focus-visible)
+*/
+.nav a:focus {
+  outline: none;
+}
 .nav a:focus-visible {
   outline: 2px solid rgba(255,255,255,.12);
   outline-offset: 2px;
@@ -215,7 +218,7 @@ body{
   transform: scale(1.04);
 }
 
-/* Responsive for catalog */
+/* Responsive */
 @media (max-width:1100px){
   .grid{ grid-template-columns:repeat(3,1fr) }
 }
@@ -244,12 +247,9 @@ a:focus:not(.nav a) {
 }
 
 /* ===================== Gallery (Masonry via CSS columns) =====================
-   Replaced grid-based mosaic (which produced holes) with CSS columns (masonry-like).
-   This removes empty gaps while keeping a tight visual layout.
-   Notes:
-   - Order becomes vertical (items fill columns top->bottom).
-   - span-* classes are left in HTML as harmless no-ops here.
-   - If you require strict row ordering with no gaps, I can add a lightweight JS packer.
+   Replaced earlier grid that produced holes with CSS columns + explicit column-count
+   so desktop shows multiple columns and holes are avoided.
+   Order flows vertically (columns). If you want strict row ordering, tell me and I'll add a JS packer.
 */
 
 /* Gallery wrapper */
@@ -259,13 +259,13 @@ a:focus:not(.nav a) {
   margin-top: 12px;
 }
 
-/* Masonry container using columns */
+/* Masonry container using columns but with explicit column-count for wide screens */
 .gallery-grid{
   column-gap: var(--gallery-gap);
-  column-width: var(--gallery-column-width); /* browser picks number of columns */
   column-fill: auto;
+  column-count: var(--gallery-column-count-desktop); /* desktop: 4 columns */
+  column-width: var(--gallery-column-width); /* fallback width */
   width:100%;
-  /* ensure consistent baseline */
 }
 
 /* Individual tile: inline-block so it flows into columns */
@@ -282,17 +282,17 @@ a:focus:not(.nav a) {
   min-height: 36px; /* prevents extremely tiny tiles if image missing */
 }
 
-/* Image behavior: keep proportions, fill tile width */
+/* Image behavior inside tile: keep proportions, fade in on load */
 .gallery-item img{
   width:100%;
   height:auto;
   display:block;
-  object-fit:cover;    /* fills tile area; change to contain if you prefer no crop */
+  object-fit:cover;    /* fills tile area; change to contain to avoid crop */
   transition: opacity .28s ease, transform .18s ease;
   opacity: 0;          /* JS should add .loaded to fade in */
   vertical-align: middle;
   background: transparent;
-  pointer-events: none; /* images non-clickable while you had disabled clicks */
+  pointer-events: none; /* images non-clickable if intended */
 }
 
 /* show when loaded */
@@ -300,7 +300,7 @@ a:focus:not(.nav a) {
   opacity: 1;
 }
 
-/* error state: hide img and show patterned bg */
+/* error state: hide img and show patterned background */
 .gallery-item.error{
   background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
 }
@@ -316,18 +316,18 @@ a:focus:not(.nav a) {
 .span-6{ /* noop */ }
 .span-8{ /* noop */ }
 
-/* Adjust column width / count responsively (fallbacks) */
+/* Responsive column counts / widths */
 @media (max-width:1100px){
-  .gallery-grid { column-width: 220px; } /* effectively ~3 columns */
+  .gallery-grid { column-count: var(--gallery-column-count-tablet); column-width: 220px; }
 }
 @media (max-width:800px){
-  .gallery-grid { column-width: 160px; } /* effectively ~2 columns */
+  .gallery-grid { column-count: var(--gallery-column-count-small); column-width: 160px; }
 }
 @media (max-width:480px){
-  .gallery-grid { column-width: 100%; } /* single column on small screens */
+  .gallery-grid { column-count: 1; column-width: 100%; }
 }
 
-/* Optional: small visual tweak to avoid perceivable "partial row" at very bottom */
+/* Optional clear to keep layout consistent */
 .gallery-grid::after {
   content: '';
   display: block;
@@ -335,7 +335,7 @@ a:focus:not(.nav a) {
   clear: both;
 }
 
-/* Lightbox styles (kept but you may hide/remove lightbox if unused) */
+/* Lightbox styles (kept but may be hidden by JS if unused) */
 .lightbox{
   position:fixed;
   inset:0;
@@ -409,9 +409,4 @@ a:focus:not(.nav a) {
 /* Very small screens */
 @media (max-width:600px){
   .nav a::after{ width:72px; }
-}
-
-/* На мобильных можно скорректировать размер строк (если нужно) */
-@media (max-width:900px) {
-  :root { --gallery-row: 18vw; }
 }
