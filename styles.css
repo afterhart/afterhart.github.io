@@ -1,5 +1,5 @@
 /* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
-/* + hero-pair (intro2/intro3); hero height made configurable to avoid crop of details */
+/* + hero-pair (intro2/intro3); hero height configurable; improved focus handling */
 
 /* Локальные шрифты (если есть) */
 @font-face {
@@ -26,9 +26,9 @@
   --underline-width: calc(var(--sidebar-w) - 40px);
   --underline-height: 2px;
 
-  /* Параметры hero (intro1) — теперь настраиваемые, чтобы уместить детали видео */
-  --hero-height: 65vh;       /* было 60vh — увеличил, чтобы уменьшить кроп */
-  --hero-min-height: 420px;  /* было 360px — увеличил минимальную высоту */
+  /* Параметры hero (intro1) */
+  --hero-height: 65vh;
+  --hero-min-height: 420px;
 
   /* пространство между вертикальными видео */
   --hero-gap: 20px;
@@ -92,6 +92,19 @@ body{
   transform:scaleX(1);
 }
 
+/* Remove focus ring on mouse click but keep it for keyboard users:
+   - hide focus outline for .nav a unless it matches :focus-visible
+   - show a subtle outline when navigated via keyboard (focus-visible)
+*/
+.nav a:focus {
+  outline: none;
+}
+.nav a:focus-visible {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 /* Main area */
 .main{
   margin-left:var(--sidebar-w);
@@ -102,7 +115,7 @@ body{
   gap:28px;
 }
 
-/* Hero (intro1) — увеличенная высота, минимальная высота поднята */
+/* Hero (intro1) */
 .hero{
   position:relative;
   width:100%;
@@ -123,7 +136,7 @@ body{
   object-fit:cover;
 }
 
-/* Новая секция: пара вертикальных интро — две колонки, выровненные по границам .main */
+/* Новая секция: пара вертикальных интро */
 .hero-pair{
   width:100%;
   display:flex;
@@ -131,8 +144,6 @@ body{
   box-sizing:border-box;
   align-items:flex-start;
 }
-
-/* Колонка-обёртка — занимает ровно свою долю, края колонок совпадают с краями .main */
 .hero-col{
   flex:1 1 0%;
   display:flex;
@@ -142,11 +153,6 @@ body{
   margin:0;
   padding:0;
 }
-
-/* Вертикальные видео: сохраняем оригинальную пропорцию/высоту
-   - ширина видео подстраивается под колонку (100%), высота авто;
-   - object-fit: contain гарантирует, что содержимое не будет обрезано;
-   - фон чёрный, чтобы заполнить возможные поля по бокам. */
 .hero-vertical{
   width:100%;
   height:auto;
@@ -156,7 +162,7 @@ body{
   border-radius:0;
 }
 
-/* Catalog / Grid — 4 columns */
+/* Catalog / Grid */
 .catalog{ width:100%; box-sizing:border-box; }
 .grid{
   display:grid;
@@ -166,7 +172,7 @@ body{
   width:100%;
 }
 
-/* Карточки */
+/* Cards */
 .item{
   display:flex;
   flex-direction:column;
@@ -225,5 +231,9 @@ body{
   .hero-vertical{ width:100%; height:auto; }
 }
 
-/* Accessibility focus */
-a:focus{ outline:2px solid rgba(255,255,255,.12); outline-offset:2px; border-radius:4px }
+/* General focus fallback for other links (keeps accessibility) */
+a:focus:not(.nav a) {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
