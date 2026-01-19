@@ -31,7 +31,7 @@
       </video>
     </section>
 
-    <!-- Новая секция: два ��ертикальных видео в ряд под intro1 -->
+    <!-- Новая секция: два вертикальных видео в ряд под intro1 -->
     <section class="hero-pair" aria-hidden="false" aria-label="Secondary intros">
       <div class="hero-col hero-col--left">
         <video class="hero-vertical" autoplay muted loop playsinline preload="auto" poster="poster2.jpg" aria-label="Intro 2">
@@ -118,7 +118,7 @@
     </section>
   </main>
 
-  <!-- Lightbox overlay -->
+  <!-- Lightbox overlay (kept hidden if disabled) -->
   <div id="lightbox" class="lightbox" aria-hidden="true" role="dialog" aria-label="Image viewer">
     <button class="lb-close" aria-label="Close (Esc)">&times;</button>
     <button class="lb-prev" aria-label="Previous image">&#10094;</button>
@@ -129,650 +129,103 @@
     <button class="lb-next" aria-label="Next image">&#10095;</button>
   </div>
 
+  <!-- Row-span helper: computes grid-row span per tile to avoid holes -->
   <script>
-/* Smart lazy-loader + fallback for gallery images
-   Place this block RIGHT BEFORE the main inline script that initializes the lightbox/nav.
-*/
-(function () {
-  // tiny SVG placeholder (very small, fast)
-  const PLACEHOLDER = 'data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>';
+  (function () {
+    'use strict';
 
-  // concurrency — сколько загрузок одновременно
-  const MAX_CONCURRENCY = 4;
-  let activeLoads = 0;
-  const queue = [];
-
-  // helper: construct raw.githubusercontent fallback for a jsDelivr URL or filename
-  function rawFallback(url) {
-    try {
-      // try to extract filename
-      const parts = url.split('/');
-      const fname = parts[parts.length - 1];
-      return `https://raw.githubusercontent.com/afterhart/GalleryPhotos/main/${fname}`;
-    } catch (e) { return null; }
-  }
-
-  // find gallery images
-  const galleryImgs = Array.from(document.querySelectorAll('.gallery-item img'));
-  if (!galleryImgs.length) return;
-
-  // prepare images: save original urls in dataset.full/dataset.src and replace src with placeholder
-  galleryImgs.forEach((img, i) => {
-    const orig = img.getAttribute('src') || '';
-    // if already set up, skip
-    if (img.dataset._lazyInit) return;
-    img.dataset._lazyInit = '1';
-    img.dataset.src = orig;
-    img.dataset.full = img.dataset.full || orig; // preserve if already had data-full
-    // set attributes to improve rendering behaviour
-    img.decoding = 'async';
-    img.loading = 'lazy';
-    // put tiny placeholder to avoid huge immediate download
-    img.src = PLACEHOLDER;
-    // ensure data-index exists (lightbox uses it)
-    if (typeof img.dataset.index === 'undefined') img.dataset.index = i;
-  });
-
-  // Load function with retry to fallback
-  function loadImageWithFallback(img) {
-    if (!img || img.dataset._loaded) return;
-    const primary = img.dataset.src;
-    const fallback = rawFallback(primary);
-    let attempts = [primary];
-    if (fallback && fallback !== primary) attempts.push(fallback);
-
-    function tryNext() {
-      if (!attempts.length) {
-        // failed all
-        img.dataset._loaded = 'error';
-        img.classList.add('gallery-img-error');
-        img.src = PLACEHOLDER;
-        return;
+    function toPx(value) {
+      if (!value) return 0;
+      value = value.trim();
+      if (value.endsWith('px')) return parseFloat(value);
+      if (value.endsWith('vw')) return (parseFloat(value) / 100) * window.innerWidth;
+      if (value.endsWith('vh')) return (parseFloat(value) / 100) * window.innerHeight;
+      if (value.endsWith('rem')) {
+        const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        return parseFloat(value) * rootSize;
       }
-      const url = attempts.shift();
-      activeLoads++;
-      // Temporarily assign; will be replaced on error
-      img.src = url;
-      // attach handlers
-      const onLoad = () => {
-        cleanup();
-        img.dataset._loaded = 'ok';
-      };
-      const onError = () => {
-        cleanup();
-        // try next fallback
-        tryNext();
-      };
-      function cleanup() {
-        activeLoads--;
-        img.removeEventListener('load', onLoad);
-        img.removeEventListener('error', onError);
-        processQueue(); // continue queued loads
-      }
-      img.addEventListener('load', onLoad, { once: true });
-      img.addEventListener('error', onError, { once: true });
+      const n = parseFloat(value);
+      return isNaN(n) ? 0 : n;
     }
 
-    tryNext();
-  }
-
-  function enqueue(img) {
-    queue.push(img);
-    processQueue();
-  }
-
-  function processQueue() {
-    while (activeLoads < MAX_CONCURRENCY && queue.length) {
-      const item = queue.shift();
-      loadImageWithFallback(item);
-    }
-  }
-
-  // IntersectionObserver to trigger loading when near viewport
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(ent => {
-      if (ent.isIntersecting) {
-        const img = ent.target;
-        io.unobserve(img);
-        enqueue(img);
-      }
-    });
-  }, {
-    rootMargin: '400px 0px 400px 0px',
-    threshold: 0.01
-  });
-
-  galleryImgs.forEach(img => {
-    io.observe(img);
-  });
-
-  // Optional: after idle, load remaining images progressively (to prefetch)
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => {
-      galleryImgs.forEach(img => {
-        if (!img.dataset._loaded && !img.dataset._queued) {
-          img.dataset._queued = '1';
-          enqueue(img);
-        }
-      });
-    }, { timeout: 3000 });
-  } else {
-    // fallback: small timeout
-    setTimeout(() => {
-      galleryImgs.forEach(img => {
-        if (!img.dataset._loaded && !img.dataset._queued) {
-          img.dataset._queued = '1';
-          enqueue(img);
-        }
-      });
-    }, 4000);
-  }
-
-  // expose a helper to refresh the lightbox images array later if needed
-  window.__refreshGalleryImages = function () {
-    // if your lightbox code computes images array from DOM at startup, call this after page scripts run:
-    return Array.from(document.querySelectorAll('.gallery-item img')).map(img => img.dataset.full || img.dataset.src || img.src);
-  };
-
-  // optional: log failed loads to console (useful for debugging)
-  galleryImgs.forEach(img => {
-    img.addEventListener('error', () => {
-      console.warn('Gallery image failed to load:', img.dataset.src || img.src);
-    });
-  });
-
-})();
-</script>
-<script>
-(function () {
-  // --- NAV SCROLL / ACTIVE (оставляем вашу логику) ---
-  const links = Array.from(document.querySelectorAll('.nav a[data-page]'));
-  const setActive = (page) => {
-    links.forEach(a => {
-      const isActive = a.dataset.page === page;
-      a.classList.toggle('active', isActive);
-      if (isActive) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-    });
-  };
-  const mapPathToPage = (p) => {
-    if (!p || p === '/' || p === '/index.html') return 'main';
-    const name = p.split('/').pop().toLowerCase();
-    if (name === 'index.html' || name === '') return 'main';
-    return name.replace('.html', '');
-  };
-  setActive(mapPathToPage(window.location.pathname));
-
-  // === Robust gallery + lightbox handler (replace previous gallery/lightbox chunk) ===
-(function () {
-  const galleryGrid = document.querySelector('.gallery-grid');
-  const lightbox = document.getElementById('lightbox');
-  if (!galleryGrid || !lightbox) return;
-
-  const lbImage = lightbox.querySelector('.lb-image');
-  const lbCaption = lightbox.querySelector('.lb-caption');
-  const lbClose = lightbox.querySelector('.lb-close');
-  const lbPrev = lightbox.querySelector('.lb-prev');
-  const lbNext = lightbox.querySelector('.lb-next');
-
-  const PLACEHOLDER_FULL = 'data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90"></svg>';
-  let currentIndex = -1;
-
-  // helpers to read current DOM state (works with lazy-loader)
-  const getItems = () => Array.from(document.querySelectorAll('.gallery-item img'));
-  const getSrcForIndex = (i) => {
-    const imgs = getItems();
-    const img = imgs[i];
-    return img ? (img.dataset.full || img.dataset.src || img.src) : null;
-  };
-
-  // open lightbox at index (safe)
-  function openAt(index) {
-    try {
-      const imgs = getItems();
-      if (!imgs.length) return;
-      if (index < 0 || index >= imgs.length) return;
-      currentIndex = index;
-
-      const src = imgs[currentIndex].dataset.full || imgs[currentIndex].dataset.src || imgs[currentIndex].src;
-      if (!lbImage) return;
-
-      // reset and show
-      lbImage.src = ''; // reset previous
-      lbImage.alt = imgs[currentIndex].alt || '';
-      lbCaption.textContent = imgs[currentIndex].alt || '';
-
-      // show overlay early (so user sees UI while image loads)
-      lightbox.classList.add('open');
-      lightbox.setAttribute('aria-hidden', 'false');
-      document.documentElement.style.overflow = 'hidden';
-
-      // set src (will trigger load/error)
-      lbImage.src = src || PLACEHOLDER_FULL;
-
-      // preload neighbors
-      preloadIndex(currentIndex - 1);
-      preloadIndex(currentIndex + 1);
-    } catch (err) {
-      console.error('openAt error', err);
-      // ensure we don't leave page unusable
-      try { lightbox.classList.remove('open'); document.documentElement.style.overflow = ''; } catch(e){}
-    }
-  }
-
-  function close() {
-    try {
-      lightbox.classList.remove('open');
-      lightbox.setAttribute('aria-hidden', 'true');
-      document.documentElement.style.overflow = '';
-      if (lbImage) lbImage.src = '';
-      currentIndex = -1;
-    } catch (err) { console.error('close error', err); }
-  }
-
-  function showPrev() {
-    const imgs = getItems();
-    if (!imgs.length) return;
-    openAt((currentIndex - 1 + imgs.length) % imgs.length);
-  }
-  function showNext() {
-    const imgs = getItems();
-    if (!imgs.length) return;
-    openAt((currentIndex + 1) % imgs.length);
-  }
-
-  function preloadIndex(i) {
-    const url = getSrcForIndex(i);
-    if (!url) return;
-    const im = new Image();
-    im.src = url;
-  }
-
-  // click thumbnails using event delegation (works for dynamic DOM)
-  galleryGrid.addEventListener('click', (ev) => {
-    const img = ev.target && ev.target.closest && ev.target.closest('img');
-    if (!img) return;
-    // find index from current DOM items (robust)
-    const imgs = getItems();
-    const idx = imgs.indexOf(img);
-    if (idx === -1) return;
-    ev.preventDefault();
-    openAt(idx);
-  });
-
-  // controls
-  lbClose.addEventListener('click', close);
-  lbPrev.addEventListener('click', (e) => { e.stopPropagation(); showPrev(); });
-  lbNext.addEventListener('click', (e) => { e.stopPropagation(); showNext(); });
-
-  // click outside image closes
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) close();
-  });
-
-  // keyboard nav
-  document.addEventListener('keydown', (e) => {
-    if (lightbox.classList.contains('open')) {
-      if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowLeft') showPrev();
-      else if (e.key === 'ArrowRight') showNext();
-    }
-  });
-
-  // touch swipe for lbImage area
-  let touchStartX = 0;
-  let touchEndX = 0;
-  if (lbImage) {
-    lbImage.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, {passive:true});
-    lbImage.addEventListener('touchend', (e) => {
-      touchEndX = e.changedTouches[0].screenX;
-      const dx = touchEndX - touchStartX;
-      if (Math.abs(dx) > 40) {
-        if (dx > 0) showPrev(); else showNext();
-      }
-    }, {passive:true});
-  }
-
-  // handle image load/error inside lightbox to avoid crashes
-  if (lbImage) {
-    lbImage.addEventListener('error', () => {
-      console.warn('Lightbox image failed to load:', lbImage.src);
-      // show placeholder and keep lightbox open so user can navigate away
-      lbImage.src = PLACEHOLDER_FULL;
-    });
-    // optional: add a small fade-in when loaded
-    lbImage.addEventListener('load', () => {
-      lbImage.style.opacity = '1';
-    });
-    lbImage.style.transition = 'opacity .18s ease';
-    lbImage.style.opacity = '0';
-  }
-
-  // expose for debugging
-  window.__openGalleryAt = openAt;
-  window.__closeGallery = close;
-})();
-
-  // prevent underlying page scroll while lightbox open on mobile
-  lightbox.addEventListener('touchmove', (e) => {
-    if (lightbox.classList.contains('open')) e.preventDefault();
-  }, { passive: false });
-
-  // --- SCROLL TO CATALOG / MAIN logic kept (from previous) ---
-  const hero = document.querySelector('.hero');
-  const gridCatalog = document.querySelector('.grid');
-  if (hero && gridCatalog) {
-    const waitForGridImages = () => {
-      const imgs = Array.from(gridCatalog.querySelectorAll('img'));
-      const promises = imgs.map(img => img.complete ? Promise.resolve() : new Promise(resolve => {
-        img.addEventListener('load', resolve, { once: true });
-        img.addEventListener('error', resolve, { once: true });
-      }));
-      return Promise.all(promises);
-    };
-
-    const EPS = 3;
-    let gridItems = Array.from(gridCatalog.querySelectorAll('.item'));
-    let firstRowItems = [];
-
-    const updateFirstRowItems = () => {
-      gridItems = Array.from(gridCatalog.querySelectorAll('.item'));
-      if (!gridItems.length) { firstRowItems = []; return; }
-      const rects = gridItems.map(it => it.getBoundingClientRect());
-      const tops = rects.map(r => r.top);
-      const minTop = Math.min(...tops);
-      firstRowItems = gridItems.filter((it, i) => Math.abs(rects[i].top - minTop) <= EPS);
-    };
-
-    const vh = () => window.innerHeight || document.documentElement.clientHeight;
-    const isElementFullyVisible = (el) => {
-      const r = el.getBoundingClientRect();
-      return r.top >= 0 && r.bottom <= vh();
-    };
-    const isFirstRowFullyVisible = () => {
-      if (!firstRowItems.length) return false;
-      const rects = firstRowItems.map(el => el.getBoundingClientRect());
-      const top = Math.min(...rects.map(r => r.top));
-      const bottom = Math.max(...rects.map(r => r.bottom));
-      return top >= 0 && bottom <= vh();
-    };
-    const isFirstRowAnyVisible = () => {
-      if (!firstRowItems.length) return false;
-      const rects = firstRowItems.map(el => el.getBoundingClientRect());
-      const top = Math.min(...rects.map(r => r.top));
-      const bottom = Math.max(...rects.map(r => r.bottom));
-      return !(bottom <= 0 || top >= vh());
-    };
-    const getFirstRowFirstElement = () => firstRowItems[0] || null;
-    const scrollToTopSmooth = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-    const scrollToElementSmooth = (el) => { if (!el) return; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
-
-    // override nav clicks to scroll on same page
-    links.forEach(a => {
-      a.addEventListener('click', (ev) => {
-        const page = a.dataset.page;
-        if (page === 'main') {
-          ev.preventDefault();
-          setActive('main');
-          scrollToTopSmooth();
-          try { history.pushState(null, '', 'index.html'); } catch (e) {}
-        } else if (page === 'catalog') {
-          ev.preventDefault();
-          updateFirstRowItems();
-          const first = getFirstRowFirstElement();
-          const target = first || document.querySelector('.catalog');
-          setActive('catalog');
-          scrollToElementSmooth(target);
-          try { history.pushState(null, '', 'index.html#catalog'); } catch (e) {}
-        }
-      });
-    });
-
-    waitForGridImages().then(() => {
-      updateFirstRowItems();
-      requestAnimationFrame(() => {
-        if (isFirstRowFullyVisible()) setActive('catalog');
-        else if (!isFirstRowAnyVisible()) setActive('main');
-        else if (isElementFullyVisible(hero)) setActive('main');
-      });
-    });
-
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => updateFirstRowItems(), 120);
-    });
-
-    let ticking = false;
-    const onScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          if (isFirstRowFullyVisible()) setActive('catalog');
-          else if (!isFirstRowAnyVisible()) setActive('main');
-          else if (isElementFullyVisible(hero)) setActive('main');
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-  }
-})();
-</script>
-<script>
-/* Temporary: disable lightbox and make gallery non-clickable; show nice placeholders */
-(function () {
-  // 1) Hide lightbox UI (so it cannot be triggered or visible)
-  const lb = document.getElementById('lightbox');
-  if (lb) {
-    lb.style.display = 'none';
-    lb.setAttribute('aria-hidden', 'true');
-  }
-
-  // 2) Block click events reaching any existing gallery handlers by stopping propagation at capture phase
-  const grid = document.querySelector('.gallery-grid');
-  if (grid) {
-    grid.addEventListener('click', function (ev) {
-      // prevent clicks from reaching older handlers
-      ev.stopPropagation();
-      ev.preventDefault();
-    }, true); // capture = true
-  }
-
-  // 3) Make sure images are not clickable (extra safety)
-  document.querySelectorAll('.gallery-item img').forEach(img => {
-    img.style.pointerEvents = 'none';
-    img.style.cursor = 'default';
-  });
-
-  // 4) Visual: add loaded/error classes based on native load/error events
-  document.querySelectorAll('.gallery-item img').forEach(img => {
-    // If image already loaded (browser cache), mark as loaded
-    if (img.complete && img.naturalWidth && img.naturalHeight) {
-      img.classList.add('loaded');
-      return;
-    }
-    // Normal handlers
-    img.addEventListener('load', () => {
-      img.classList.add('loaded');
-    }, { once: true });
-    img.addEventListener('error', () => {
-      const parent = img.closest('.gallery-item');
-      if (parent) parent.classList.add('error');
-      // leave placeholder background from CSS
-    }, { once: true });
-  });
-
-  // 5) Optional: if you had a lazy-loader replacing srcs with placeholders,
-  // ensure that when the real src is set the load event still fires and triggers .loaded.
-  // (Above handlers cover that.)
-
-  // 6) Additional safety: remove keyboard handlers for lightbox if they exist on window (best-effort)
-  try {
-    // This is non-destructive: only removes handlers if they are stored in known names
-    if (window.__closeGallery) {
-      window.__closeGallery = function(){};
-    }
-  } catch (e) { /* ignore */ }
-
-})();
-</script>
-  <script src="gallery-packer.js">
-
-//
-// Works by measuring each tile height after images load, computing needed
-// grid-row span (based on grid-auto-rows) and placing tiles into the first
-// column group with minimal current height (best-fit), updating occupancy.
-// Robust to image load errors and window resizing (rebuilds on resize).
-
-(function () {
-  'use strict';
-
-  function parsePx(value) {
-    if (!value) return 0;
-    return parseFloat(value.replace('px','')) || 0;
-  }
-
-  function getColSpanFromClass(el, maxCols) {
-    // Look for classes like span-1/2/3/4/6/8 and map them to column span.
-    for (const cls of el.classList) {
-      const m = cls.match(/^span-(\d+)$/);
-      if (m) {
-        const n = Number(m[1]);
-        if (n >= 1 && n <= maxCols) return n;
-      }
-    }
-    // default: 3 columns (approx thumbnail)
-    return Math.min(3, maxCols);
-  }
-
-  function waitForImages(nodeList, timeout = 1500) {
-    const imgs = Array.from(nodeList).flatMap(item => Array.from(item.querySelectorAll('img')));
-    if (!imgs.length) return Promise.resolve();
-    const promises = imgs.map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(resolve => {
-        const onFinish = () => { resolve(); };
-        img.addEventListener('load', onFinish, { once: true });
-        img.addEventListener('error', onFinish, { once: true });
-        // some browsers may never fire; we'll resolve via timeout later
-      });
-    });
-    return Promise.race([
-      Promise.all(promises),
-      new Promise(resolve => setTimeout(resolve, timeout))
-    ]);
-  }
-
-  function buildGrid() {
-    try {
-      const grid = document.querySelector('.gallery-grid');
-      if (!grid) return;
-
-      // remove any inline placement from previous run
-      const items = Array.from(grid.querySelectorAll('.gallery-item'));
+    function waitForImages(items, timeout = 1200) {
+      const imgs = [];
       items.forEach(it => {
-        it.style.gridColumnStart = '';
-        it.style.gridColumnEnd = '';
-        it.style.gridRowStart = '';
-        it.style.gridRowEnd = '';
+        const i = it.querySelectorAll('img');
+        i.forEach(x => imgs.push(x));
       });
+      if (!imgs.length) return Promise.resolve();
+      const promises = imgs.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+          img.addEventListener('load', resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        });
+      });
+      return Promise.race([Promise.all(promises), new Promise(res => setTimeout(res, timeout))]);
+    }
 
-      // computed values
-      const cs = getComputedStyle(grid);
-      // grid-auto-rows can be returned as '8vw' or computed px; try computed property first
-      const rowHeightPx = parsePx(cs.getPropertyValue('grid-auto-rows')) || parsePx(getComputedStyle(document.documentElement).getPropertyValue('--gallery-row')) || 64;
-      const gap = parsePx(cs.getPropertyValue('gap')) || parsePx(cs.getPropertyValue('column-gap')) || 6;
+    function recompute() {
+      try {
+        const grid = document.querySelector('.gallery-grid');
+        if (!grid) return;
+        const items = Array.from(grid.querySelectorAll('.gallery-item'));
+        if (!items.length) return;
 
-      // number of columns from grid-template-columns
-      const templateCols = cs.getPropertyValue('grid-template-columns');
-      const columns = templateCols ? templateCols.split(' ').length : 12;
-      const maxCols = columns || 12;
+        const cs = getComputedStyle(grid);
+        const gridAutoRows = cs.getPropertyValue('grid-auto-rows') || getComputedStyle(document.documentElement).getPropertyValue('--gallery-row') || '8vw';
+        const gap = cs.getPropertyValue('gap') || cs.getPropertyValue('grid-row-gap') || getComputedStyle(document.documentElement).getPropertyValue('--gallery-gap') || '6px';
+        const rowHeightPx = toPx(gridAutoRows);
+        const gapPx = toPx(gap);
+        if (rowHeightPx <= 0) return;
 
-      // wait until images in items have loaded (or timeout)
-      waitForImages(items, 1500).then(() => {
-        // measure item heights (natural rendered heights)
-        const measured = items.map(item => {
-          // force layout to get height
-          const rect = item.getBoundingClientRect();
-          // if height is zero, fallback to measuring image naturalHeight scaled to width
-          let h = rect.height || 0;
-          if (h < 2) {
-            const img = item.querySelector('img');
-            if (img && img.naturalWidth && img.naturalHeight) {
-              const w = item.clientWidth || img.clientWidth || img.naturalWidth;
-              h = (img.naturalHeight / img.naturalWidth) * w;
-            } else {
-              h = parseInt(rowHeightPx,10); // fallback
-            }
-          }
-          return { el: item, height: h };
+        // clear previous inline spans so we measure natural content
+        items.forEach(item => {
+          item.style.gridRowEnd = '';
+          item.style.gridRowStart = '';
         });
 
-        // occupancy per column in "rows" (row units)
-        const occupancy = new Array(maxCols).fill(0);
+        waitForImages(items, 1200).then(() => {
+          items.forEach(item => {
+            const rect = item.getBoundingClientRect();
+            let h = rect.height;
+            if (h < 2) {
+              const img = item.querySelector('img');
+              if (img && img.naturalWidth && img.naturalHeight) {
+                const w = item.clientWidth || img.clientWidth || img.naturalWidth;
+                h = (img.naturalHeight / img.naturalWidth) * w;
+              } else {
+                h = rowHeightPx;
+              }
+            }
+            const rowSpan = Math.max(1, Math.ceil((h + gapPx) / (rowHeightPx + gapPx)));
+            item.style.gridRowEnd = 'span ' + rowSpan;
+            item.style.alignSelf = 'start';
+          });
+        });
 
-        // helper to compute rowSpan from pixel height
-        const rowUnit = rowHeightPx + gap;
-        const computeRowSpan = (px) => Math.max(1, Math.ceil((px + gap) / rowUnit));
-
-        // place each measured item (best-fit by minimal max occupancy over candidate columns)
-        for (const m of measured) {
-          const el = m.el;
-          const colSpan = Math.min(getColSpanFromClass(el, maxCols), maxCols);
-          const rowSpan = computeRowSpan(m.height);
-
-          // find best column start (i) where max(occupancy[i..i+colSpan-1]) is minimal
-          let bestIndex = 0;
-          let bestHeight = Infinity;
-          for (let i = 0; i <= maxCols - colSpan; i++) {
-            let maxH = 0;
-            for (let j = i; j < i + colSpan; j++) maxH = Math.max(maxH, occupancy[j]);
-            if (maxH < bestHeight) { bestHeight = maxH; bestIndex = i; }
-          }
-
-          // assign placement (grid is 1-based)
-          el.style.gridColumnStart = String(bestIndex + 1);
-          el.style.gridColumnEnd = `span ${colSpan}`;
-          el.style.gridRowStart = String(bestHeight + 1);
-          el.style.gridRowEnd = `span ${rowSpan}`;
-
-          // update occupancy
-          for (let j = bestIndex; j < bestIndex + colSpan; j++) occupancy[j] = bestHeight + rowSpan;
-        }
-
-        // optional: set explicit container height to avoid collapse in some browsers
-        const totalRows = Math.max(...occupancy);
-        if (totalRows > 0) {
-          grid.style.minHeight = (totalRows * rowUnit - gap) + 'px';
-        } else {
-          grid.style.minHeight = '';
-        }
-      });
-
-    } catch (err) {
-      console.error('gallery-packer error', err);
+      } catch (e) {
+        console.error('gallery-rowspan error', e);
+      }
     }
-  }
 
-  // initial run after full load (ensures fonts/images are settled)
-  window.addEventListener('load', () => {
-    buildGrid();
-    // rebuild after a short timeout (images that were slow)
-    setTimeout(buildGrid, 700);
-  });
+    if (document.readyState === 'complete') recompute();
+    else {
+      window.addEventListener('load', recompute, { once: true });
+      window.addEventListener('DOMContentLoaded', () => setTimeout(recompute, 120), { once: true });
+    }
 
-  // rebuild on resize (debounced)
-  let rs;
-  window.addEventListener('resize', () => {
-    clearTimeout(rs);
-    rs = setTimeout(buildGrid, 250);
-  });
+    let rt;
+    window.addEventListener('resize', () => {
+      clearTimeout(rt);
+      rt = setTimeout(recompute, 220);
+    });
 
-  // expose for debugging/manual trigger
-  window.__repackGallery = buildGrid;
+    // expose for debugging
+    window.__galleryRecompute = recompute;
+  })();
+  </script>
 
-})();
-</script>
 </body>
 </html>
 
