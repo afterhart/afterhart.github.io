@@ -80,7 +80,7 @@
 
 <script>
 (function () {
-  const links = document.querySelectorAll('.nav a[data-page]');
+  const links = Array.from(document.querySelectorAll('.nav a[data-page]'));
   const setActive = (page) => {
     links.forEach(a => {
       const isActive = a.dataset.page === page;
@@ -97,7 +97,6 @@
     return name.replace('.html', '');
   };
   setActive(mapPathToPage(window.location.pathname));
-  links.forEach(a => a.addEventListener('click', () => setActive(a.dataset.page)));
 
   const hero = document.querySelector('.hero');
   const grid = document.querySelector('.grid');
@@ -159,13 +158,56 @@
     return !(bottom <= 0 || top >= vh());
   };
 
+  // Helper: получить первый элемент первой строки (для скролла)
+  const getFirstRowFirstElement = () => {
+    if (!firstRowItems.length) return null;
+    return firstRowItems[0];
+  };
+
+  // smooth scroll helpers
+  const scrollToTopSmooth = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  const scrollToElementSmooth = (el) => {
+    if (!el) return;
+    // используем block:'start' чтобы элемент оказался сверху viewport
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Перехватываем клики по навигации для main и catalog, чтобы не навигировать на другие страницы,
+  // а просто плавно скроллить по текущей странице.
+  links.forEach(a => {
+    a.addEventListener('click', (ev) => {
+      const page = a.dataset.page;
+      if (page === 'main') {
+        ev.preventDefault();
+        setActive('main');
+        scrollToTopSmooth();
+        // обновим историю (опционально): pushState чтобы адрес остался index.html
+        try { history.pushState(null, '', 'index.html'); } catch (e) {}
+      } else if (page === 'catalog') {
+        ev.preventDefault();
+        // пересчитаем первую строку на случай, если DOM изменился
+        updateFirstRowItems();
+        const first = getFirstRowFirstElement();
+        // если есть первый элемент — прокручиваем к нему, иначе к секции .catalog
+        const target = first || document.querySelector('.catalog');
+        setActive('catalog');
+        scrollToElementSmooth(target);
+        try { history.pushState(null, '', 'index.html#catalog'); } catch (e) {}
+      } else {
+        // Для остальных ссылок — оставляем нормальную навигацию (если вы хотите тоже скроллить, скажите)
+      }
+    });
+  });
+
   // Инициализируем: ждём загрузки картинок, затем считаем первую строку и запускаем обработчики
   waitForGridImages().then(() => {
     updateFirstRowItems();
     // начальная проверка
     requestAnimationFrame(() => {
       if (isFirstRowFullyVisible()) setActive('catalog');
-      else if (!isFirstRowAnyVisible()) setActive('main'); // если первая строка вообще не видна -> main
+      else if (!isFirstRowAnyVisible()) setActive('main');
       else if (isElementFullyVisible(hero)) setActive('main');
     });
   });
@@ -222,6 +264,7 @@
 
 </body>
 </html>
+
 
 
 
