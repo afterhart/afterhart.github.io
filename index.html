@@ -558,9 +558,67 @@
   }
 })();
 </script>
+<script>
+/* Temporary: disable lightbox and make gallery non-clickable; show nice placeholders */
+(function () {
+  // 1) Hide lightbox UI (so it cannot be triggered or visible)
+  const lb = document.getElementById('lightbox');
+  if (lb) {
+    lb.style.display = 'none';
+    lb.setAttribute('aria-hidden', 'true');
+  }
 
+  // 2) Block click events reaching any existing gallery handlers by stopping propagation at capture phase
+  const grid = document.querySelector('.gallery-grid');
+  if (grid) {
+    grid.addEventListener('click', function (ev) {
+      // prevent clicks from reaching older handlers
+      ev.stopPropagation();
+      ev.preventDefault();
+    }, true); // capture = true
+  }
+
+  // 3) Make sure images are not clickable (extra safety)
+  document.querySelectorAll('.gallery-item img').forEach(img => {
+    img.style.pointerEvents = 'none';
+    img.style.cursor = 'default';
+  });
+
+  // 4) Visual: add loaded/error classes based on native load/error events
+  document.querySelectorAll('.gallery-item img').forEach(img => {
+    // If image already loaded (browser cache), mark as loaded
+    if (img.complete && img.naturalWidth && img.naturalHeight) {
+      img.classList.add('loaded');
+      return;
+    }
+    // Normal handlers
+    img.addEventListener('load', () => {
+      img.classList.add('loaded');
+    }, { once: true });
+    img.addEventListener('error', () => {
+      const parent = img.closest('.gallery-item');
+      if (parent) parent.classList.add('error');
+      // leave placeholder background from CSS
+    }, { once: true });
+  });
+
+  // 5) Optional: if you had a lazy-loader replacing srcs with placeholders,
+  // ensure that when the real src is set the load event still fires and triggers .loaded.
+  // (Above handlers cover that.)
+
+  // 6) Additional safety: remove keyboard handlers for lightbox if they exist on window (best-effort)
+  try {
+    // This is non-destructive: only removes handlers if they are stored in known names
+    if (window.__closeGallery) {
+      window.__closeGallery = function(){};
+    }
+  } catch (e) { /* ignore */ }
+
+})();
+</script>
 </body>
 </html>
+
 
 
 
