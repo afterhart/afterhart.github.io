@@ -300,3 +300,47 @@ a:focus:not(.nav a) {
 
 /* small tweak */
 .gallery-grid { gap: 6px; }
+/* NAV underline — restore animated underline for .nav links */
+:root {
+  /* убедись, что это значение существует (можешь подправить ширину) */
+  --underline-height: 2px;
+  /* если хочешь фиксированную длину подчеркивания — поправь ниже; по умолчанию рассчитывается от sidebar */
+  --underline-width: calc(var(--sidebar-w) - 40px);
+}
+
+.nav a {
+  position: relative; /* нужно для ::after */
+  display: inline-block;
+  text-decoration: none;
+  color: var(--fg);
+}
+
+/* the underline bar */
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px; /* отступ под ссылкой — подстрой если нужно */
+  height: var(--underline-height);
+  width: var(--underline-width);
+  background: var(--accent, #fff);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .18s ease;
+  opacity: 0.98;
+  pointer-events: none;
+}
+
+/* show underline on hover / active / aria-current */
+.nav a:hover::after,
+.nav a.active::after,
+.nav a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* keep focus visible for keyboard users */
+.nav a:focus { outline: none; }
+.nav a:focus-visible { outline: 2px solid rgba(255,255,255,.12); outline-offset: 2px; border-radius: 4px; }
+
+/* If your sidebar is narrow or you want underline exactly matching text width instead: 
+   replace width: var(--underline-width) with width: 100% (or a percentage) */
