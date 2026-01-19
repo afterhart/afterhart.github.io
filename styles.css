@@ -1,6 +1,7 @@
-/* AFTERHART — restored base styles with gallery grid + dense packing and safe image sizing */
+/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
+/* + hero-pair (intro2/intro3); hero height configurable; improved focus handling */
 
-/* Local fonts (if any) */
+/* Локальные шрифты (если есть) */
 @font-face {
   font-family: 'BrandFont';
   src: url('fonts/BrandFont.woff2') format('woff2');
@@ -25,13 +26,12 @@
   --underline-width: calc(var(--sidebar-w) - 40px);
   --underline-height: 2px;
 
+  /* Параметры hero (intro1) */
   --hero-height: 65vh;
   --hero-min-height: 420px;
 
+  /* пространство между вертикальными видео */
   --hero-gap: 20px;
-
-  --gallery-gap: 6px;
-  --gallery-row: 8vw;
 }
 
 *{box-sizing:border-box}
@@ -92,13 +92,20 @@ body{
   transform:scaleX(1);
 }
 
-.nav a:focus { outline: none; }
+/* Remove focus ring on mouse click but keep it for keyboard users:
+   - hide focus outline for .nav a unless it matches :focus-visible
+   - show a subtle outline when navigated via keyboard (focus-visible)
+*/
+.nav a:focus {
+  outline: none;
+}
 .nav a:focus-visible {
   outline: 2px solid rgba(255,255,255,.12);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
+/* Main area */
 .main{
   margin-left:var(--sidebar-w);
   min-height:100vh;
@@ -108,7 +115,7 @@ body{
   gap:28px;
 }
 
-/* Hero */
+/* Hero (intro1) */
 .hero{
   position:relative;
   width:100%;
@@ -129,7 +136,7 @@ body{
   object-fit:cover;
 }
 
-/* Hero pair */
+/* Новая секция: пара вертикальных интро */
 .hero-pair{
   width:100%;
   display:flex;
@@ -155,7 +162,7 @@ body{
   border-radius:0;
 }
 
-/* Catalog */
+/* Catalog / Grid */
 .catalog{ width:100%; box-sizing:border-box; }
 .grid{
   display:grid;
@@ -224,155 +231,9 @@ body{
   .hero-vertical{ width:100%; height:auto; }
 }
 
-/* Accessibility focus fallback */
+/* General focus fallback for other links (keeps accessibility) */
 a:focus:not(.nav a) {
   outline: 2px solid rgba(255,255,255,.12);
   outline-offset: 2px;
   border-radius: 4px;
 }
-
-/* === Gallery: grid mosaic restored, plus dense fill === */
-.gallery{
-  width:100%;
-  box-sizing:border-box;
-  margin-top: 12px;
-}
-
-/* Grid-based mosaic (12 columns) -> keep original grid layout */
-.gallery-grid{
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: var(--gallery-row);
-  gap: var(--gallery-gap);
-  grid-auto-flow: dense; /* ADDED: allow browser to fill gaps when row-spans are set */
-}
-
-/* Tile and image */
-.gallery-item{
-  display:block;
-  width:100%;
-  height:auto; /* changed to auto so height reflects content for measurement */
-  overflow:hidden;
-  margin:0;
-  padding:0;
-  background:#000;
-}
-.gallery-item img{
-  width:100%;
-  height:auto; /* ensure natural height for measurement */
-  object-fit:cover;
-  display:block;
-  vertical-align:middle;
-  transition: opacity .22s ease;
-  opacity: 1;
-}
-
-/* span classes (keep for widths) */
-.span-1{ grid-column: span 1; grid-row: span 1; }
-.span-2{ grid-column: span 2; grid-row: span 1; }
-.span-3{ grid-column: span 3; grid-row: span 1; }
-.span-4{ grid-column: span 4; grid-row: span 2; }
-.span-6{ grid-column: span 6; grid-row: span 2; }
-.span-8{ grid-column: span 8; grid-row: span 3; }
-
-/* Mobile adjustments */
-@media (max-width:900px){
-  :root{ --gallery-row: 18vw; }
-  .gallery-grid{ grid-template-columns: repeat(6, 1fr); }
-  .span-6{ grid-column: span 6; grid-row: span 2; }
-  .span-4{ grid-column: span 3; grid-row: span 2; }
-}
-@media (max-width:600px){
-  :root{ --gallery-row: 26vw; }
-  .gallery-grid{ grid-template-columns: repeat(4, 1fr); }
-  .span-6{ grid-column: span 4; grid-row: span 2; }
-}
-
-/* placeholder + error visuals */
-.gallery-item {
-  background: linear-gradient(135deg, #f5efe6 0%, #efe6dd 100%);
-  position: relative;
-}
-.gallery-item.error {
-  background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
-}
-.gallery-item.error img { display: none; }
-
-/* small tweak */
-.gallery-grid { gap: 6px; }
-/* NAV underline — restore animated underline for .nav links */
-:root {
-  /* убедись, что это значение существует (можешь подправить ширину) */
-  --underline-height: 2px;
-  /* если хочешь фиксированную длину подчеркивания — поправь ниже; по умолчанию рассчитывается от sidebar */
-  --underline-width: calc(var(--sidebar-w) - 40px);
-}
-
-.nav a {
-  position: relative; /* нужно для ::after */
-  display: inline-block;
-  text-decoration: none;
-  color: var(--fg);
-}
-
-/* the underline bar */
-.nav a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -8px; /* отступ под ссылкой — подстрой если нужно */
-  height: var(--underline-height);
-  width: var(--underline-width);
-  background: var(--accent, #fff);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .18s ease;
-  opacity: 0.98;
-  pointer-events: none;
-}
-
-/* show underline on hover / active / aria-current */
-.nav a:hover::after,
-.nav a.active::after,
-.nav a[aria-current="page"]::after {
-  transform: scaleX(1);
-}
-
-/* keep focus visible for keyboard users */
-.nav a:focus { outline: none; }
-.nav a:focus-visible { outline: 2px solid rgba(255,255,255,.12); outline-offset: 2px; border-radius: 4px; }
-
-/* If your sidebar is narrow or you want underline exactly matching text width instead: 
-   replace width: var(--underline-width) with width: 100% (or a percentage) */
-/* RESTORE NAV UNDERLINE — paste at end of styles.css */
-.sidebar .nav a {
-  position: relative !important;
-  display: inline-block !important;
-  color: var(--fg) !important;
-  text-decoration: none !important;
-}
-
-.sidebar .nav a::after {
-  content: "" !important;
-  position: absolute !important;
-  left: 0 !important;
-  bottom: -6px !important;      /* поправь отступ, если нужно */
-  height: 2px !important;
-  width: calc(var(--sidebar-w,240px) - 40px) !important;
-  background: var(--accent, #fff) !important;
-  transform: scaleX(0) !important;
-  transform-origin: left center !important;
-  transition: transform .22s cubic-bezier(.2,.8,.2,1) !important;
-  pointer-events: none !important;
-  opacity: .98 !important;
-}
-
-.sidebar .nav a:hover::after,
-.sidebar .nav a.active::after,
-.sidebar .nav a[aria-current="page"]::after {
-  transform: scaleX(1) !important;
-}
-
-/* keep keyboard focus visible */
-.sidebar .nav a:focus { outline: none !important; }
-.sidebar .nav a:focus-visible { outline: 2px solid rgba(255,255,255,.12) !important; outline-offset: 2px !important; border-radius:4px !important; }
