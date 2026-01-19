@@ -1,5 +1,8 @@
-/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
-/* + hero-pair (intro2/intro3); hero height configurable; improved focus handling */
+
+/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge
+   Updated: gallery switched to masonry (CSS columns) to remove empty holes/gaps.
+   If you prefer strict row-order (no column flow), I can instead add a tiny JS masonry/packer.
+*/
 
 /* Локальные шрифты (если есть) */
 @font-face {
@@ -32,6 +35,13 @@
 
   /* пространство между вертикальными видео */
   --hero-gap: 20px;
+
+  /* Gallery (masonry) */
+  --gallery-gap: 6px;                    /* щели между плитками */
+  --gallery-column-width: 280px;         /* базовая ширина колонки (адаптивно) */
+  --gallery-column-count-desktop: 4;
+  --gallery-column-count-tablet: 3;
+  --gallery-column-count-small: 2;
 }
 
 *{box-sizing:border-box}
@@ -92,13 +102,8 @@ body{
   transform:scaleX(1);
 }
 
-/* Remove focus ring on mouse click but keep it for keyboard users:
-   - hide focus outline for .nav a unless it matches :focus-visible
-   - show a subtle outline when navigated via keyboard (focus-visible)
-*/
-.nav a:focus {
-  outline: none;
-}
+/* Remove focus ring on mouse click but keep it for keyboard users */
+.nav a:focus { outline: none; }
 .nav a:focus-visible {
   outline: 2px solid rgba(255,255,255,.12);
   outline-offset: 2px;
@@ -210,7 +215,7 @@ body{
   transform: scale(1.04);
 }
 
-/* Responsive */
+/* Responsive for catalog */
 @media (max-width:1100px){
   .grid{ grid-template-columns:repeat(3,1fr) }
 }
@@ -237,102 +242,173 @@ a:focus:not(.nav a) {
   outline-offset: 2px;
   border-radius: 4px;
 }
-/* ===== Gallery mosaic (add/ensure this is present in styles.css) ===== */
+
+/* ===================== Gallery (Masonry via CSS columns) =====================
+   Replaced grid-based mosaic (which produced holes) with CSS columns (masonry-like).
+   This removes empty gaps while keeping a tight visual layout.
+   Notes:
+   - Order becomes vertical (items fill columns top->bottom).
+   - span-* classes are left in HTML as harmless no-ops here.
+   - If you require strict row ordering with no gaps, I can add a lightweight JS packer.
+*/
+
+/* Gallery wrapper */
 .gallery{
   width:100%;
   box-sizing:border-box;
   margin-top: 12px;
 }
 
-:root {
-  --gallery-gap: 6px;    /* тонкие щели между фото */
-  --gallery-row: 8vw;    /* базовая высота ряда, responsive */
-}
-
-/* Гибкая грид-сетка: 12 колонок для более точного позиционирования */
+/* Masonry container using columns */
 .gallery-grid{
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  grid-auto-rows: var(--gallery-row);
-  gap: var(--gallery-gap);
+  column-gap: var(--gallery-gap);
+  column-width: var(--gallery-column-width); /* browser picks number of columns */
+  column-fill: auto;
+  width:100%;
+  /* ensure consistent baseline */
 }
 
-/* Плитка и изображение внутри */
+/* Individual tile: inline-block so it flows into columns */
 .gallery-item{
-  display:block;
-  width:100%;
-  height:100%;
+  display: inline-block;
+  width: 100%;
+  margin: 0 0 var(--gallery-gap);
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  -moz-column-break-inside: avoid;
+  background: linear-gradient(135deg,#f5efe6 0%,#efe6dd 100%);
   overflow:hidden;
-  margin:0;
-  padding:0;
-  background:#000;
+  position:relative;
+  min-height: 36px; /* prevents extremely tiny tiles if image missing */
 }
+
+/* Image behavior: keep proportions, fill tile width */
 .gallery-item img{
   width:100%;
-  height:100%;
-  object-fit:cover;   /* плотная обрезка — сетка впритык */
+  height:auto;
   display:block;
-  vertical-align:middle;
+  object-fit:cover;    /* fills tile area; change to contain if you prefer no crop */
+  transition: opacity .28s ease, transform .18s ease;
+  opacity: 0;          /* JS should add .loaded to fade in */
+  vertical-align: middle;
+  background: transparent;
+  pointer-events: none; /* images non-clickable while you had disabled clicks */
 }
 
-/* span-классы: меняют ширину/высоту плитки в ячейках */
-.span-1{ grid-column: span 1; grid-row: span 1; }
-.span-2{ grid-column: span 2; grid-row: span 1; }
-.span-3{ grid-column: span 3; grid-row: span 1; }
-.span-4{ grid-column: span 4; grid-row: span 2; }
-.span-6{ grid-column: span 6; grid-row: span 2; }
-.span-8{ grid-column: span 8; grid-row: span 3; }
-
-/* Mobile adjustments */
-@media (max-width:900px){
-  :root{ --gallery-row: 18vw; }
-  .gallery-grid{ grid-template-columns: repeat(6, 1fr); }
-  .span-6{ grid-column: span 6; grid-row: span 2; }
-  .span-4{ grid-column: span 3; grid-row: span 2; }
-}
-@media (max-width:600px){
-  :root{ --gallery-row: 26vw; }
-  .gallery-grid{ grid-template-columns: repeat(4, 1fr); }
-  .span-6{ grid-column: span 4; grid-row: span 2; }
-}
-/* --- Gallery: nicer placeholder + avoid black squares --- */
-.gallery-item {
-  display: block;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  /* мягкий фон вместо чёрного */
-  background: linear-gradient(135deg, #f5efe6 0%, #efe6dd 100%);
-  background-size: cover;
-  position: relative;
-}
-
-/* картинка по-умолчанию скрыта, появится плавно после загрузки */
-.gallery-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  opacity: 0;
-  transition: opacity .28s ease;
-  pointer-events: none; /* временно делаем не кликабельной */
-}
-
-/* когда картинка загрузилась — показываем */
-.gallery-item img.loaded {
+/* show when loaded */
+.gallery-item img.loaded{
   opacity: 1;
 }
 
-/* при ошибке загрузки - явный, аккуратный паттерн/фон */
-.gallery-item.error {
+/* error state: hide img and show patterned bg */
+.gallery-item.error{
   background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
 }
+.gallery-item.error img{
+  display:none;
+}
 
-/* Убедимся, что сетка остаётся впритык (маленький gap). Поменять при желании */
-.gallery-grid {
-  gap: 6px;
+/* span-* classes are harmless here (kept for backward compatibility) */
+.span-1{ /* noop for column layout */ }
+.span-2{ /* noop */ }
+.span-3{ /* noop */ }
+.span-4{ /* noop */ }
+.span-6{ /* noop */ }
+.span-8{ /* noop */ }
+
+/* Adjust column width / count responsively (fallbacks) */
+@media (max-width:1100px){
+  .gallery-grid { column-width: 220px; } /* effectively ~3 columns */
+}
+@media (max-width:800px){
+  .gallery-grid { column-width: 160px; } /* effectively ~2 columns */
+}
+@media (max-width:480px){
+  .gallery-grid { column-width: 100%; } /* single column on small screens */
+}
+
+/* Optional: small visual tweak to avoid perceivable "partial row" at very bottom */
+.gallery-grid::after {
+  content: '';
+  display: block;
+  height: 0;
+  clear: both;
+}
+
+/* Lightbox styles (kept but you may hide/remove lightbox if unused) */
+.lightbox{
+  position:fixed;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: rgba(0,0,0,0.92);
+  z-index:9999;
+  opacity:0;
+  pointer-events:none;
+  transition: opacity .22s ease;
+}
+.lightbox.open{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.lb-stage{
+  max-width:92vw;
+  max-height:92vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.lb-image{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+  display:block;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  transition: opacity .18s ease;
+  opacity: 1;
+}
+
+/* Controls */
+.lb-close, .lb-prev, .lb-next{
+  position:fixed;
+  background:transparent;
+  color:#fff;
+  border:0;
+  font-size:28px;
+  line-height:1;
+  cursor:pointer;
+  padding:12px;
+  opacity:.95;
+}
+.lb-close{ top:18px; right:18px; font-size:36px; }
+.lb-prev{ left:20px; top:50%; transform:translateY(-50%); font-size:42px; }
+.lb-next{ right:20px; top:50%; transform:translateY(-50%); font-size:42px; }
+.lb-caption{ color:#fff; font-size:14px; text-align:center; margin-top:12px; }
+
+/* Accessibility focus fallback for links (keeps keyboard visible outline) */
+a:focus:not(.nav a) {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* small-screen improvements */
+@media (max-width:900px){
+  :root{ --sidebar-w: 100% }
+  .sidebar{ position:static; width:100%; padding:18px; flex-direction:row; justify-content:space-between; }
+  .nav ul{ flex-direction:row; gap:18px; }
+  .main{ margin-left:0; padding:20px; }
+  .hero{ height:50vh; min-height:260px; }
+  .hero-pair{ gap:12px; }
+  .hero-vertical{ width:100%; height:auto; }
+}
+
+/* Very small screens */
+@media (max-width:600px){
+  .nav a::after{ width:72px; }
 }
 
 /* На мобильных можно скорректировать размер строк (если нужно) */
