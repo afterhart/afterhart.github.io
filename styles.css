@@ -344,3 +344,35 @@ a:focus:not(.nav a) {
 
 /* If your sidebar is narrow or you want underline exactly matching text width instead: 
    replace width: var(--underline-width) with width: 100% (or a percentage) */
+/* RESTORE NAV UNDERLINE — paste at end of styles.css */
+.sidebar .nav a {
+  position: relative !important;
+  display: inline-block !important;
+  color: var(--fg) !important;
+  text-decoration: none !important;
+}
+
+.sidebar .nav a::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  bottom: -6px !important;      /* поправь отступ, если нужно */
+  height: 2px !important;
+  width: calc(var(--sidebar-w,240px) - 40px) !important;
+  background: var(--accent, #fff) !important;
+  transform: scaleX(0) !important;
+  transform-origin: left center !important;
+  transition: transform .22s cubic-bezier(.2,.8,.2,1) !important;
+  pointer-events: none !important;
+  opacity: .98 !important;
+}
+
+.sidebar .nav a:hover::after,
+.sidebar .nav a.active::after,
+.sidebar .nav a[aria-current="page"]::after {
+  transform: scaleX(1) !important;
+}
+
+/* keep keyboard focus visible */
+.sidebar .nav a:focus { outline: none !important; }
+.sidebar .nav a:focus-visible { outline: 2px solid rgba(255,255,255,.12) !important; outline-offset: 2px !important; border-radius:4px !important; }
