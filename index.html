@@ -327,7 +327,11 @@
   const nextBtn = document.querySelector('.lightbox-next');
   const galleryItems = Array.from(document.querySelectorAll('.gallery-item img'));
   
-  if (!lightbox || !galleryItems.length) return;
+  if (!lightbox || !galleryItems.length) {
+    if (!lightbox) console.warn('Lightbox element not found');
+    if (!galleryItems.length) console.warn('No gallery items found');
+    return;
+  }
 
   let currentIndex = 0;
 
