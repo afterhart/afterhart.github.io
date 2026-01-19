@@ -295,3 +295,47 @@ a:focus:not(.nav a) {
   .gallery-grid{ grid-template-columns: repeat(4, 1fr); }
   .span-6{ grid-column: span 4; grid-row: span 2; }
 }
+/* --- Gallery: nicer placeholder + avoid black squares --- */
+.gallery-item {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  /* мягкий фон вместо чёрного */
+  background: linear-gradient(135deg, #f5efe6 0%, #efe6dd 100%);
+  background-size: cover;
+  position: relative;
+}
+
+/* картинка по-умолчанию скрыта, появится плавно после загрузки */
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity .28s ease;
+  pointer-events: none; /* временно делаем не кликабельной */
+}
+
+/* когда картинка загрузилась — показываем */
+.gallery-item img.loaded {
+  opacity: 1;
+}
+
+/* при ошибке загрузки - явный, аккуратный паттерн/фон */
+.gallery-item.error {
+  background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
+}
+
+/* Убедимся, что сетка остаётся впритык (маленький gap). Поменять при желании */
+.gallery-grid {
+  gap: 6px;
+}
+
+/* На мобильных можно скорректировать размер строк (если нужно) */
+@media (max-width:900px) {
+  :root { --gallery-row: 18vw; }
+}
