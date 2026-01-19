@@ -616,8 +616,166 @@
 
 })();
 </script>
+  <script src="gallery-packer.js">
+
+//
+// Works by measuring each tile height after images load, computing needed
+// grid-row span (based on grid-auto-rows) and placing tiles into the first
+// column group with minimal current height (best-fit), updating occupancy.
+// Robust to image load errors and window resizing (rebuilds on resize).
+
+(function () {
+  'use strict';
+
+  function parsePx(value) {
+    if (!value) return 0;
+    return parseFloat(value.replace('px','')) || 0;
+  }
+
+  function getColSpanFromClass(el, maxCols) {
+    // Look for classes like span-1/2/3/4/6/8 and map them to column span.
+    for (const cls of el.classList) {
+      const m = cls.match(/^span-(\d+)$/);
+      if (m) {
+        const n = Number(m[1]);
+        if (n >= 1 && n <= maxCols) return n;
+      }
+    }
+    // default: 3 columns (approx thumbnail)
+    return Math.min(3, maxCols);
+  }
+
+  function waitForImages(nodeList, timeout = 1500) {
+    const imgs = Array.from(nodeList).flatMap(item => Array.from(item.querySelectorAll('img')));
+    if (!imgs.length) return Promise.resolve();
+    const promises = imgs.map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(resolve => {
+        const onFinish = () => { resolve(); };
+        img.addEventListener('load', onFinish, { once: true });
+        img.addEventListener('error', onFinish, { once: true });
+        // some browsers may never fire; we'll resolve via timeout later
+      });
+    });
+    return Promise.race([
+      Promise.all(promises),
+      new Promise(resolve => setTimeout(resolve, timeout))
+    ]);
+  }
+
+  function buildGrid() {
+    try {
+      const grid = document.querySelector('.gallery-grid');
+      if (!grid) return;
+
+      // remove any inline placement from previous run
+      const items = Array.from(grid.querySelectorAll('.gallery-item'));
+      items.forEach(it => {
+        it.style.gridColumnStart = '';
+        it.style.gridColumnEnd = '';
+        it.style.gridRowStart = '';
+        it.style.gridRowEnd = '';
+      });
+
+      // computed values
+      const cs = getComputedStyle(grid);
+      // grid-auto-rows can be returned as '8vw' or computed px; try computed property first
+      const rowHeightPx = parsePx(cs.getPropertyValue('grid-auto-rows')) || parsePx(getComputedStyle(document.documentElement).getPropertyValue('--gallery-row')) || 64;
+      const gap = parsePx(cs.getPropertyValue('gap')) || parsePx(cs.getPropertyValue('column-gap')) || 6;
+
+      // number of columns from grid-template-columns
+      const templateCols = cs.getPropertyValue('grid-template-columns');
+      const columns = templateCols ? templateCols.split(' ').length : 12;
+      const maxCols = columns || 12;
+
+      // wait until images in items have loaded (or timeout)
+      waitForImages(items, 1500).then(() => {
+        // measure item heights (natural rendered heights)
+        const measured = items.map(item => {
+          // force layout to get height
+          const rect = item.getBoundingClientRect();
+          // if height is zero, fallback to measuring image naturalHeight scaled to width
+          let h = rect.height || 0;
+          if (h < 2) {
+            const img = item.querySelector('img');
+            if (img && img.naturalWidth && img.naturalHeight) {
+              const w = item.clientWidth || img.clientWidth || img.naturalWidth;
+              h = (img.naturalHeight / img.naturalWidth) * w;
+            } else {
+              h = parseInt(rowHeightPx,10); // fallback
+            }
+          }
+          return { el: item, height: h };
+        });
+
+        // occupancy per column in "rows" (row units)
+        const occupancy = new Array(maxCols).fill(0);
+
+        // helper to compute rowSpan from pixel height
+        const rowUnit = rowHeightPx + gap;
+        const computeRowSpan = (px) => Math.max(1, Math.ceil((px + gap) / rowUnit));
+
+        // place each measured item (best-fit by minimal max occupancy over candidate columns)
+        for (const m of measured) {
+          const el = m.el;
+          const colSpan = Math.min(getColSpanFromClass(el, maxCols), maxCols);
+          const rowSpan = computeRowSpan(m.height);
+
+          // find best column start (i) where max(occupancy[i..i+colSpan-1]) is minimal
+          let bestIndex = 0;
+          let bestHeight = Infinity;
+          for (let i = 0; i <= maxCols - colSpan; i++) {
+            let maxH = 0;
+            for (let j = i; j < i + colSpan; j++) maxH = Math.max(maxH, occupancy[j]);
+            if (maxH < bestHeight) { bestHeight = maxH; bestIndex = i; }
+          }
+
+          // assign placement (grid is 1-based)
+          el.style.gridColumnStart = String(bestIndex + 1);
+          el.style.gridColumnEnd = `span ${colSpan}`;
+          el.style.gridRowStart = String(bestHeight + 1);
+          el.style.gridRowEnd = `span ${rowSpan}`;
+
+          // update occupancy
+          for (let j = bestIndex; j < bestIndex + colSpan; j++) occupancy[j] = bestHeight + rowSpan;
+        }
+
+        // optional: set explicit container height to avoid collapse in some browsers
+        const totalRows = Math.max(...occupancy);
+        if (totalRows > 0) {
+          grid.style.minHeight = (totalRows * rowUnit - gap) + 'px';
+        } else {
+          grid.style.minHeight = '';
+        }
+      });
+
+    } catch (err) {
+      console.error('gallery-packer error', err);
+    }
+  }
+
+  // initial run after full load (ensures fonts/images are settled)
+  window.addEventListener('load', () => {
+    buildGrid();
+    // rebuild after a short timeout (images that were slow)
+    setTimeout(buildGrid, 700);
+  });
+
+  // rebuild on resize (debounced)
+  let rs;
+  window.addEventListener('resize', () => {
+    clearTimeout(rs);
+    rs = setTimeout(buildGrid, 250);
+  });
+
+  // expose for debugging/manual trigger
+  window.__repackGallery = buildGrid;
+
+})();
+</script>
 </body>
 </html>
+
 
 
 
