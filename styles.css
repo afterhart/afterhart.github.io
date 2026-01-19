@@ -1,79 +1,342 @@
 
-/* FULL styles.css (only gallery-related part changed back to GRID + other styles kept).
-   Replace your current styles.css with this (or merge gallery section). */
+/* AFTERHART — images preserved, 4 per row, no borders, images flush with video edge */
+/* + hero-pair (intro2/intro3); hero height configurable; improved focus handling */
 
-/* === (остальная часть вашего CSS — оставляем без изменений) === */
-/* ... (предполагается, что весь существующий CSS выше остаётся) ... */
-
-/* ---------------- Gallery: GRID mosaic (12-column) + helpers ---------------- */
-:root{
-  --gallery-gap: 6px;    /* gap between tiles */
-  --gallery-row: 8vw;    /* base row height (responsive) */
+/* Локальные шрифты (если есть) */
+@font-face {
+  font-family: 'BrandFont';
+  src: url('fonts/BrandFont.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'ItemFont';
+  src: url('fonts/AllFont1.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-/* Grid-based mosaic (12 columns) */
+:root{
+  --bg: #000;
+  --fg: #fff;
+  --muted: #bdbdbd;
+  --accent: #fff;
+  --sidebar-w: 240px;
+  --underline-width: calc(var(--sidebar-w) - 40px);
+  --underline-height: 2px;
+
+  /* Параметры hero (intro1) */
+  --hero-height: 65vh;
+  --hero-min-height: 420px;
+
+  /* пространство между вертикальными видео */
+  --hero-gap: 20px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font-family:  Arial, Helvetica, sans-serif;
+}
+
+/* Sidebar */
+.sidebar{
+  position:fixed;
+  left:0;top:0;bottom:0;
+  width:var(--sidebar-w);
+  padding:48px 28px;
+  display:flex;
+  flex-direction:column;
+  gap:24px;
+  z-index:10;
+}
+.brand{
+  font-family:'BrandFont', Arial, Helvetica, sans-serif;
+  font-size:20px;
+  letter-spacing:4px;
+  color:var(--fg);
+  pointer-events:none;
+}
+
+/* Navigation underline */
+.nav ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
+.nav a{
+  color:var(--fg);
+  text-decoration:none;
+  font-size:14px;
+  letter-spacing:2px;
+  padding:6px 0;
+  display:inline-block;
+  position:relative;
+  transition:opacity .15s ease;
+}
+.nav a::after{
+  content:'';
+  position:absolute;
+  left:0;
+  bottom:-2px;
+  height:var(--underline-height);
+  width:var(--underline-width);
+  background:var(--accent);
+  transform:scaleX(0);
+  transform-origin:left center;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.nav a:hover::after,
+.nav a.active::after,
+.nav a[aria-current="page"]::after{
+  transform:scaleX(1);
+}
+
+/* Remove focus ring on mouse click but keep it for keyboard users:
+   - hide focus outline for .nav a unless it matches :focus-visible
+   - show a subtle outline when navigated via keyboard (focus-visible)
+*/
+.nav a:focus {
+  outline: none;
+}
+.nav a:focus-visible {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Main area */
+.main{
+  margin-left:var(--sidebar-w);
+  min-height:100vh;
+  padding:32px;
+  display:flex;
+  flex-direction:column;
+  gap:28px;
+}
+
+/* Hero (intro1) */
+.hero{
+  position:relative;
+  width:100%;
+  height:var(--hero-height);
+  min-height:var(--hero-min-height);
+  border-radius:0;
+  overflow:hidden;
+  background:#111;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.hero-video{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+/* Новая секция: пара вертикальных интро */
+.hero-pair{
+  width:100%;
+  display:flex;
+  gap:var(--hero-gap);
+  box-sizing:border-box;
+  align-items:flex-start;
+}
+.hero-col{
+  flex:1 1 0%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:visible;
+  margin:0;
+  padding:0;
+}
+.hero-vertical{
+  width:100%;
+  height:auto;
+  object-fit:contain;
+  background: #000;
+  display:block;
+  border-radius:0;
+}
+
+/* Catalog / Grid */
+.catalog{ width:100%; box-sizing:border-box; }
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:20px;
+  margin-top:6px;
+  width:100%;
+}
+
+/* Cards */
+.item{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.item a{
+  display:block;
+  text-decoration:none;
+  color:var(--fg);
+  padding:0;
+  border:0;
+  background:transparent;
+  margin:0;
+  overflow:hidden;
+}
+.item img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:100%;
+  border-radius:0;
+  transition: transform .18s ease;
+  will-change: transform;
+}
+.item p{
+  margin:6px 0 0;
+  padding:0;
+  font-size:13px;
+  letter-spacing:1px;
+  text-align:center;
+  color:var(--fg);
+}
+.item a:hover img,
+.item a:focus img{
+  transform: scale(1.04);
+}
+
+/* Responsive */
+@media (max-width:1100px){
+  .grid{ grid-template-columns:repeat(3,1fr) }
+}
+@media (max-width:900px){
+  :root{ --sidebar-w: 100% }
+  .sidebar{ position:static; width:100%; padding:18px; flex-direction:row; justify-content:space-between; }
+  .nav ul{ flex-direction:row; gap:18px; }
+  .main{ margin-left:0; padding:20px; }
+  .hero{ height:50vh; min-height:260px; }
+  .grid{ grid-template-columns:repeat(2,1fr); gap:16px; }
+  .hero-pair{ gap:12px; }
+  .hero-vertical{ width:100%; height:auto; }
+}
+@media (max-width:600px){
+  .grid{ grid-template-columns:1fr; }
+  .nav a::after{ width:72px; }
+  .hero-pair{ flex-direction:column; gap:12px; }
+  .hero-vertical{ width:100%; height:auto; }
+}
+
+/* General focus fallback for other links (keeps accessibility) */
+a:focus:not(.nav a) {
+  outline: 2px solid rgba(255,255,255,.12);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* ===== Gallery mosaic (add/ensure this is present in styles.css) ===== */
 .gallery{
   width:100%;
   box-sizing:border-box;
-  margin-top:12px;
+  margin-top: 12px;
 }
 
+:root {
+  --gallery-gap: 6px;    /* тонкие щели между фото */
+  --gallery-row: 8vw;    /* базовая высота ряда, responsive */
+}
+
+/* Гибкая грид-сетка: 12 колонок для более точного позиционирования */
 .gallery-grid{
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   grid-auto-rows: var(--gallery-row);
   gap: var(--gallery-gap);
-  /* ensure items are positioned by our JS packer; allow explicit placement */
 }
 
-/* Tile default: let JS compute spans; keep visual styles */
+/* Плитка и изображение внутри */
 .gallery-item{
   display:block;
   width:100%;
-  height:auto; /* allow natural height; JS will set row spans */
+  height:100%;
   overflow:hidden;
   margin:0;
   padding:0;
-  background: linear-gradient(135deg,#f5efe6 0%,#efe6dd 100%);
-  position:relative;
+  background:#000;
 }
-
-/* Image fills tile area (tile height defined by content / JS) */
 .gallery-item img{
   width:100%;
-  height:auto;
+  height:100%;
+  object-fit:cover;   /* плотная обрезка — сетка впритык */
   display:block;
-  object-fit:cover;
   vertical-align:middle;
-  transition: opacity .22s ease;
-  opacity: 1;
 }
 
-/* Error state: hide broken img and show pattern */
-.gallery-item.error{
-  background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
-}
-.gallery-item.error img{ display:none; }
+/* span-классы: меняют ширину/высоту плитки в ячейках */
+.span-1{ grid-column: span 1; grid-row: span 1; }
+.span-2{ grid-column: span 2; grid-row: span 1; }
+.span-3{ grid-column: span 3; grid-row: span 1; }
+.span-4{ grid-column: span 4; grid-row: span 2; }
+.span-6{ grid-column: span 6; grid-row: span 2; }
+.span-8{ grid-column: span 8; grid-row: span 3; }
 
-/* span-* kept for semantic but JS will respect their intended col spans if present */
-.span-1{ /* noop */ }
-.span-2{ /* noop */ }
-.span-3{ /* noop */ }
-.span-4{ /* noop */ }
-.span-6{ /* noop */ }
-.span-8{ /* noop */ }
-
-/* Mobile adjustments: change the row height and grid columns on narrow screens */
+/* Mobile adjustments */
 @media (max-width:900px){
   :root{ --gallery-row: 18vw; }
   .gallery-grid{ grid-template-columns: repeat(6, 1fr); }
+  .span-6{ grid-column: span 6; grid-row: span 2; }
+  .span-4{ grid-column: span 3; grid-row: span 2; }
 }
 @media (max-width:600px){
   :root{ --gallery-row: 26vw; }
   .gallery-grid{ grid-template-columns: repeat(4, 1fr); }
+  .span-6{ grid-column: span 4; grid-row: span 2; }
+}
+/* --- Gallery: nicer placeholder + avoid black squares --- */
+.gallery-item {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  /* мягкий фон вместо чёрного */
+  background: linear-gradient(135deg, #f5efe6 0%, #efe6dd 100%);
+  background-size: cover;
+  position: relative;
 }
 
-/* Optional: small visual polish */
-.gallery-item img[loading="lazy"]{ will-change: transform, opacity; }
+/* картинка по-умолчанию скрыта, появится плавно после загрузки */
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity .28s ease;
+  pointer-events: none; /* временно делаем не кликабельной */
+}
 
-/* === (остальной ваш CSS остаётся ниже без изменений) === */
+/* когда картинка загрузилась — показываем */
+.gallery-item img.loaded {
+  opacity: 1;
+}
+
+/* при ошибке загрузки - явный, аккуратный паттерн/фон */
+.gallery-item.error {
+  background: repeating-linear-gradient(45deg, #f5efe6, #f5efe6 10px, #e6ddd3 10px, #e6ddd3 20px);
+}
+
+/* Убедимся, что сетка остаётся впритык (маленький gap). Поменять при желании */
+.gallery-grid {
+  gap: 6px;
+}
+
+/* На мобильных можно скорректировать размер строк (если нужно) */
+@media (max-width:900px) {
+  :root { --gallery-row: 18vw; }
+}
