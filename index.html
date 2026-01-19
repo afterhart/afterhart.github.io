@@ -129,6 +129,160 @@
     <button class="lb-next" aria-label="Next image">&#10095;</button>
   </div>
 
+  <script>
+/* Smart lazy-loader + fallback for gallery images
+   Place this block RIGHT BEFORE the main inline script that initializes the lightbox/nav.
+*/
+(function () {
+  // tiny SVG placeholder (very small, fast)
+  const PLACEHOLDER = 'data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"></svg>';
+
+  // concurrency — сколько загрузок одновременно
+  const MAX_CONCURRENCY = 4;
+  let activeLoads = 0;
+  const queue = [];
+
+  // helper: construct raw.githubusercontent fallback for a jsDelivr URL or filename
+  function rawFallback(url) {
+    try {
+      // try to extract filename
+      const parts = url.split('/');
+      const fname = parts[parts.length - 1];
+      return `https://raw.githubusercontent.com/afterhart/GalleryPhotos/main/${fname}`;
+    } catch (e) { return null; }
+  }
+
+  // find gallery images
+  const galleryImgs = Array.from(document.querySelectorAll('.gallery-item img'));
+  if (!galleryImgs.length) return;
+
+  // prepare images: save original urls in dataset.full/dataset.src and replace src with placeholder
+  galleryImgs.forEach((img, i) => {
+    const orig = img.getAttribute('src') || '';
+    // if already set up, skip
+    if (img.dataset._lazyInit) return;
+    img.dataset._lazyInit = '1';
+    img.dataset.src = orig;
+    img.dataset.full = img.dataset.full || orig; // preserve if already had data-full
+    // set attributes to improve rendering behaviour
+    img.decoding = 'async';
+    img.loading = 'lazy';
+    // put tiny placeholder to avoid huge immediate download
+    img.src = PLACEHOLDER;
+    // ensure data-index exists (lightbox uses it)
+    if (typeof img.dataset.index === 'undefined') img.dataset.index = i;
+  });
+
+  // Load function with retry to fallback
+  function loadImageWithFallback(img) {
+    if (!img || img.dataset._loaded) return;
+    const primary = img.dataset.src;
+    const fallback = rawFallback(primary);
+    let attempts = [primary];
+    if (fallback && fallback !== primary) attempts.push(fallback);
+
+    function tryNext() {
+      if (!attempts.length) {
+        // failed all
+        img.dataset._loaded = 'error';
+        img.classList.add('gallery-img-error');
+        img.src = PLACEHOLDER;
+        return;
+      }
+      const url = attempts.shift();
+      activeLoads++;
+      // Temporarily assign; will be replaced on error
+      img.src = url;
+      // attach handlers
+      const onLoad = () => {
+        cleanup();
+        img.dataset._loaded = 'ok';
+      };
+      const onError = () => {
+        cleanup();
+        // try next fallback
+        tryNext();
+      };
+      function cleanup() {
+        activeLoads--;
+        img.removeEventListener('load', onLoad);
+        img.removeEventListener('error', onError);
+        processQueue(); // continue queued loads
+      }
+      img.addEventListener('load', onLoad, { once: true });
+      img.addEventListener('error', onError, { once: true });
+    }
+
+    tryNext();
+  }
+
+  function enqueue(img) {
+    queue.push(img);
+    processQueue();
+  }
+
+  function processQueue() {
+    while (activeLoads < MAX_CONCURRENCY && queue.length) {
+      const item = queue.shift();
+      loadImageWithFallback(item);
+    }
+  }
+
+  // IntersectionObserver to trigger loading when near viewport
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(ent => {
+      if (ent.isIntersecting) {
+        const img = ent.target;
+        io.unobserve(img);
+        enqueue(img);
+      }
+    });
+  }, {
+    rootMargin: '400px 0px 400px 0px',
+    threshold: 0.01
+  });
+
+  galleryImgs.forEach(img => {
+    io.observe(img);
+  });
+
+  // Optional: after idle, load remaining images progressively (to prefetch)
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      galleryImgs.forEach(img => {
+        if (!img.dataset._loaded && !img.dataset._queued) {
+          img.dataset._queued = '1';
+          enqueue(img);
+        }
+      });
+    }, { timeout: 3000 });
+  } else {
+    // fallback: small timeout
+    setTimeout(() => {
+      galleryImgs.forEach(img => {
+        if (!img.dataset._loaded && !img.dataset._queued) {
+          img.dataset._queued = '1';
+          enqueue(img);
+        }
+      });
+    }, 4000);
+  }
+
+  // expose a helper to refresh the lightbox images array later if needed
+  window.__refreshGalleryImages = function () {
+    // if your lightbox code computes images array from DOM at startup, call this after page scripts run:
+    return Array.from(document.querySelectorAll('.gallery-item img')).map(img => img.dataset.full || img.dataset.src || img.src);
+  };
+
+  // optional: log failed loads to console (useful for debugging)
+  galleryImgs.forEach(img => {
+    img.addEventListener('error', () => {
+      console.warn('Gallery image failed to load:', img.dataset.src || img.src);
+    });
+  });
+
+})();
+</script>
 <script>
 (function () {
   // --- NAV SCROLL / ACTIVE (оставляем вашу логику) ---
@@ -339,6 +493,7 @@
 
 </body>
 </html>
+
 
 
 
