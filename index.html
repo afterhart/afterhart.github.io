@@ -302,87 +302,155 @@
   };
   setActive(mapPathToPage(window.location.pathname));
 
-  // --- gallery / lightbox ---
+  // === Robust gallery + lightbox handler (replace previous gallery/lightbox chunk) ===
+(function () {
   const galleryGrid = document.querySelector('.gallery-grid');
-  const items = Array.from(document.querySelectorAll('.gallery-item img'));
   const lightbox = document.getElementById('lightbox');
+  if (!galleryGrid || !lightbox) return;
+
   const lbImage = lightbox.querySelector('.lb-image');
   const lbCaption = lightbox.querySelector('.lb-caption');
   const lbClose = lightbox.querySelector('.lb-close');
   const lbPrev = lightbox.querySelector('.lb-prev');
   const lbNext = lightbox.querySelector('.lb-next');
 
+  const PLACEHOLDER_FULL = 'data:image/svg+xml;charset=utf8,<svg xmlns="http://www.w3.org/2000/svg" width="160" height="90"></svg>';
   let currentIndex = -1;
-  // Берём src (CDN ссылки) — подходит для jsDelivr
-  const images = items.map(img => img.dataset.full || img.src);
 
-  const openAt = (index) => {
-    if (index < 0 || index >= images.length) return;
-    currentIndex = index;
-    lbImage.src = images[currentIndex];
-    lbImage.alt = items[currentIndex].alt || '';
-    lbCaption.textContent = items[currentIndex].alt || '';
-    lightbox.classList.add('open');
-    lightbox.setAttribute('aria-hidden', 'false');
-    document.documentElement.style.overflow = 'hidden'; // блокируем скролл страницы
-    // preload neighbors
-    preload(currentIndex - 1); preload(currentIndex + 1);
+  // helpers to read current DOM state (works with lazy-loader)
+  const getItems = () => Array.from(document.querySelectorAll('.gallery-item img'));
+  const getSrcForIndex = (i) => {
+    const imgs = getItems();
+    const img = imgs[i];
+    return img ? (img.dataset.full || img.dataset.src || img.src) : null;
   };
 
-  const close = () => {
-    lightbox.classList.remove('open');
-    lightbox.setAttribute('aria-hidden', 'true');
-    document.documentElement.style.overflow = '';
-    lbImage.src = '';
-    currentIndex = -1;
-  };
+  // open lightbox at index (safe)
+  function openAt(index) {
+    try {
+      const imgs = getItems();
+      if (!imgs.length) return;
+      if (index < 0 || index >= imgs.length) return;
+      currentIndex = index;
 
-  const showPrev = () => openAt((currentIndex - 1 + images.length) % images.length);
-  const showNext = () => openAt((currentIndex + 1) % images.length);
+      const src = imgs[currentIndex].dataset.full || imgs[currentIndex].dataset.src || imgs[currentIndex].src;
+      if (!lbImage) return;
 
-  const preload = (i) => {
-    if (i < 0 || i >= images.length) return;
+      // reset and show
+      lbImage.src = ''; // reset previous
+      lbImage.alt = imgs[currentIndex].alt || '';
+      lbCaption.textContent = imgs[currentIndex].alt || '';
+
+      // show overlay early (so user sees UI while image loads)
+      lightbox.classList.add('open');
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.documentElement.style.overflow = 'hidden';
+
+      // set src (will trigger load/error)
+      lbImage.src = src || PLACEHOLDER_FULL;
+
+      // preload neighbors
+      preloadIndex(currentIndex - 1);
+      preloadIndex(currentIndex + 1);
+    } catch (err) {
+      console.error('openAt error', err);
+      // ensure we don't leave page unusable
+      try { lightbox.classList.remove('open'); document.documentElement.style.overflow = ''; } catch(e){}
+    }
+  }
+
+  function close() {
+    try {
+      lightbox.classList.remove('open');
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.documentElement.style.overflow = '';
+      if (lbImage) lbImage.src = '';
+      currentIndex = -1;
+    } catch (err) { console.error('close error', err); }
+  }
+
+  function showPrev() {
+    const imgs = getItems();
+    if (!imgs.length) return;
+    openAt((currentIndex - 1 + imgs.length) % imgs.length);
+  }
+  function showNext() {
+    const imgs = getItems();
+    if (!imgs.length) return;
+    openAt((currentIndex + 1) % imgs.length);
+  }
+
+  function preloadIndex(i) {
+    const url = getSrcForIndex(i);
+    if (!url) return;
     const im = new Image();
-    im.src = images[i];
-  };
+    im.src = url;
+  }
 
-  // click thumbnails
-  items.forEach((img, i) => {
-    img.addEventListener('click', (e) => {
-      e.preventDefault();
-      openAt(i);
-    });
+  // click thumbnails using event delegation (works for dynamic DOM)
+  galleryGrid.addEventListener('click', (ev) => {
+    const img = ev.target && ev.target.closest && ev.target.closest('img');
+    if (!img) return;
+    // find index from current DOM items (robust)
+    const imgs = getItems();
+    const idx = imgs.indexOf(img);
+    if (idx === -1) return;
+    ev.preventDefault();
+    openAt(idx);
   });
 
   // controls
   lbClose.addEventListener('click', close);
-  lbPrev.addEventListener('click', showPrev);
-  lbNext.addEventListener('click', showNext);
+  lbPrev.addEventListener('click', (e) => { e.stopPropagation(); showPrev(); });
+  lbNext.addEventListener('click', (e) => { e.stopPropagation(); showNext(); });
 
-  // click outside image -> close
+  // click outside image closes
   lightbox.addEventListener('click', (e) => {
     if (e.target === lightbox) close();
   });
 
   // keyboard nav
   document.addEventListener('keydown', (e) => {
-    if (currentIndex === -1) return;
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowLeft') showPrev();
-    if (e.key === 'ArrowRight') showNext();
+    if (lightbox.classList.contains('open')) {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowLeft') showPrev();
+      else if (e.key === 'ArrowRight') showNext();
+    }
   });
 
-  // touch swipe
+  // touch swipe for lbImage area
   let touchStartX = 0;
   let touchEndX = 0;
-  lbImage.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, {passive:true});
-  lbImage.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    const dx = touchEndX - touchStartX;
-    if (Math.abs(dx) > 40) {
-      if (dx > 0) showPrev(); else showNext();
-    }
-  }, {passive:true});
+  if (lbImage) {
+    lbImage.addEventListener('touchstart', (e) => { touchStartX = e.changedTouches[0].screenX; }, {passive:true});
+    lbImage.addEventListener('touchend', (e) => {
+      touchEndX = e.changedTouches[0].screenX;
+      const dx = touchEndX - touchStartX;
+      if (Math.abs(dx) > 40) {
+        if (dx > 0) showPrev(); else showNext();
+      }
+    }, {passive:true});
+  }
+
+  // handle image load/error inside lightbox to avoid crashes
+  if (lbImage) {
+    lbImage.addEventListener('error', () => {
+      console.warn('Lightbox image failed to load:', lbImage.src);
+      // show placeholder and keep lightbox open so user can navigate away
+      lbImage.src = PLACEHOLDER_FULL;
+    });
+    // optional: add a small fade-in when loaded
+    lbImage.addEventListener('load', () => {
+      lbImage.style.opacity = '1';
+    });
+    lbImage.style.transition = 'opacity .18s ease';
+    lbImage.style.opacity = '0';
+  }
+
+  // expose for debugging
+  window.__openGalleryAt = openAt;
+  window.__closeGallery = close;
+})();
 
   // prevent underlying page scroll while lightbox open on mobile
   lightbox.addEventListener('touchmove', (e) => {
@@ -493,6 +561,7 @@
 
 </body>
 </html>
+
 
 
 
