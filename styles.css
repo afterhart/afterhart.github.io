@@ -237,3 +237,13 @@ a:focus:not(.nav a) {
   outline-offset: 2px;
   border-radius: 4px;
 }
+/* Убираем рамку при клике по элементам каталога, но оставляем видимый фокус для клавиатуры */
+.item a:focus {
+  outline: none;            /* убирает рамку при мыши/клике */
+}
+
+.item a:focus-visible {
+  outline: 2px solid rgba(255,255,255,.12); /* показываем тонкую рамку только при клавиатурном фокусе */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
