@@ -117,285 +117,135 @@
   </main>
 
 <script>
-// nav-scroll-fixed.js
-// Fixed navigation highlight + smooth scroll handler.
-// - Ensures .nav a.active persists (not only on hover).
-// - Prevents default navigation for main/catalog/gallery links and scrolls smoothly.
-// - No history.pushState (no unwanted navigation).
-// - Decision logic: intro2/3 >50% => main; first catalog row >50% => catalog;
-//   first gallery row fully visible => gallery; when scrolling up, last catalog row fully visible => catalog;
-//   hero visible => main (lower priority to avoid stealing when catalog dominates).
-// - Replace previous nav script with this one.
+// nav-fix.js
+// Надёжно блокирует обычную навигацию ссылок в .nav и реализует только внутреннюю плавную прокрутку.
+// Заменяет поведение: при клике по Main -> scrollTop, Catalog -> первая строка каталога, Gallery -> первая строка галереи.
+// Защищает от двойного срабатывания и работает независимо от порядка загрузки других скриптов.
 
 (function () {
   'use strict';
 
-  const ROW_EPS = 6; // tolerance for grouping items into a row
+  // Удобные селекторы / элементы
+  const navRootSelector = '.nav';
+  const navLinkSelector = '.nav a';
+  const catalogGridSelector = '.catalog .grid, .grid';
+  const galleryGridSelector = '.gallery .grid, .gallery-grid';
 
-  // Helper selectors
-  function $(sel) { return document.querySelector(sel); }
-  function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
-
-  // Nav links with data-page
-  const navLinksSelector = '.nav a[data-page]';
-  function getNavLinks() { return $all(navLinksSelector); }
-
-  function setActive(page) {
-    const links = getNavLinks();
+  // Простая функция переключения классов active/aria-current
+  function setActiveNav(page) {
+    const links = Array.from(document.querySelectorAll(navLinkSelector));
     links.forEach(a => {
-      const isActive = a.dataset.page === page;
-      if (isActive) {
-        a.classList.add('active');
-        a.setAttribute('aria-current', 'page');
-      } else {
-        a.classList.remove('active');
-        a.removeAttribute('aria-current');
-      }
+      const isActive = a.dataset && a.dataset.page === page;
+      a.classList.toggle('active', !!isActive);
+      if (isActive) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
     });
   }
 
-  // Elements
-  const hero = $('.hero'); // intro1
-  const heroPair = $('.hero-pair'); // intro2/intro3 container
-  const introElems = heroPair ? Array.from(heroPair.querySelectorAll('.hero-vertical')) : [];
-  const catalogGrid = $('.catalog .grid') || $('.grid'); // main catalog grid
-  const galleryGrid = $('.gallery .grid') || $('.gallery-grid'); // gallery grid (optional)
-
-  // viewport / rect helpers
-  function rect(el) { return el.getBoundingClientRect(); }
-  function vh() { return window.innerHeight || document.documentElement.clientHeight; }
-
-  // fraction of element visible in viewport (0..1)
-  function visibleFraction(el) {
-    if (!el) return 0;
-    const r = rect(el);
-    const overlap = Math.max(0, Math.min(r.bottom, vh()) - Math.max(r.top, 0));
-    if (r.height <= 0) return 0;
-    return Math.min(1, overlap / r.height);
+  // Возвращает первую ноду первой строки для переданного grid-конт��йнера
+  function firstElementOfFirstRow(gridEl) {
+    if (!gridEl) return null;
+    // items могут быть .item или .gallery-item
+    const items = Array.from(gridEl.querySelectorAll('.item, .gallery-item'));
+    if (!items.length) return null;
+    // Группируем по top и берем первую группу
+    const list = items.map(it => ({ el: it, top: Math.round(it.getBoundingClientRect().top) }));
+    list.sort((a,b) => a.top - b.top);
+    const firstTop = list[0].top;
+    const firstRow = list.filter(x => Math.abs(x.top - firstTop) <= 6).map(x => x.el);
+    return firstRow.length ? firstRow[0] : list[0].el;
   }
 
-  // group elements into rows by their top coordinate (responsive columns)
-  function rowsFromItems(items) {
-    if (!items || !items.length) return [];
-    const list = items.map(it => ({ el: it, top: Math.round(rect(it).top) }));
-    list.sort((a, b) => a.top - b.top);
-    const rows = [];
-    list.forEach(entry => {
-      if (!rows.length) rows.push([entry.el]);
-      else {
-        const lastTop = Math.round(rect(rows[rows.length - 1][0]).top);
-        if (Math.abs(entry.top - lastTop) <= ROW_EPS) rows[rows.length - 1].push(entry.el);
-        else rows.push([entry.el]);
-      }
-    });
-    return rows;
-  }
-
-  function avgVisible(elements) {
-    if (!elements || !elements.length) return 0;
-    return elements.reduce((sum, el) => sum + visibleFraction(el), 0) / elements.length;
-  }
-  function allFullyVisible(elements) {
-    if (!elements || !elements.length) return false;
-    return elements.every(el => visibleFraction(el) >= 0.999);
-  }
-
-  function getCatalogRows() {
-    if (!catalogGrid) return [];
-    const items = Array.from(catalogGrid.querySelectorAll('.item'));
-    return rowsFromItems(items);
-  }
-  function getGalleryRows() {
-    if (!galleryGrid) return [];
-    const items = Array.from(galleryGrid.querySelectorAll('.gallery-item, .item'));
-    return rowsFromItems(items);
-  }
-
-  // track scroll direction
-  let lastScrollY = window.pageYOffset || 0;
-
-  function decideActive() {
-    const heroFrac = hero ? visibleFraction(hero) : 0;
-    const introFracs = introElems.length ? introElems.map(e => visibleFraction(e)) : [];
-    const maxIntroFrac = introFracs.length ? Math.max(...introFracs) : 0;
-
-    const catalogRows = getCatalogRows();
-    const galleryRows = getGalleryRows();
-
-    const firstCatalogRow = catalogRows.length ? catalogRows[0] : [];
-    const lastCatalogRow = catalogRows.length ? catalogRows[catalogRows.length - 1] : [];
-    const firstGalleryRow = galleryRows.length ? galleryRows[0] : [];
-
-    const avgFirstCatalog = avgVisible(firstCatalogRow);
-    const firstGalleryFully = firstGalleryRow.length ? allFullyVisible(firstGalleryRow) : false;
-    const lastCatalogFully = lastCatalogRow.length ? allFullyVisible(lastCatalogRow) : false;
-
-    const currentY = window.pageYOffset || 0;
-    const direction = currentY > lastScrollY ? 'down' : (currentY < lastScrollY ? 'up' : 'none');
-    lastScrollY = currentY;
-
-    // Priority order (only one will match)
-    // 1) MAIN: intro2/intro3 > 50%
-    if (maxIntroFrac > 0.5) {
-      setActive('main');
-      return;
-    }
-
-    // 2) CATALOG: >50% of FIRST catalog row visible
-    if (firstCatalogRow.length && avgFirstCatalog > 0.5) {
-      setActive('catalog');
-      return;
-    }
-
-    // 3) GALLERY: FIRST gallery row fully visible => gallery
-    if (firstGalleryRow.length && firstGalleryFully) {
-      setActive('gallery');
-      return;
-    }
-
-    // 4) SCROLL UP special case: if last catalog row fully visible => catalog
-    if (direction === 'up' && lastCatalogFully) {
-      setActive('catalog');
-      return;
-    }
-
-    // 5) HERO visible at all => MAIN (lower priority than catalog/galleries above)
-    if (heroFrac > 0) {
-      setActive('main');
-      return;
-    }
-
-    // fallback
-    setActive('main');
-  }
-
-  // Wait for images in a container (so measurements are accurate)
-  function waitForImages(container, timeout = 1000) {
-    if (!container) return Promise.resolve();
-    const imgs = Array.from(container.querySelectorAll('img'));
-    if (!imgs.length) return Promise.resolve();
-    const promises = imgs.map(img => img.complete ? Promise.resolve() : new Promise(res => {
-      img.addEventListener('load', res, { once: true });
-      img.addEventListener('error', res, { once: true });
-    }));
-    return Promise.race([Promise.all(promises), new Promise(res => setTimeout(res, timeout))]);
-  }
-
-  // scroll targets
-  function firstElementOfFirstCatalogRow() {
-    const r = getCatalogRows();
-    return (r.length && r[0].length) ? r[0][0] : null;
-  }
-  function firstElementOfFirstGalleryRow() {
-    const r = getGalleryRows();
-    return (r.length && r[0].length) ? r[0][0] : null;
-  }
-
-  // smooth scroll helpers
-  const SCROLL_OFFSET = 0; // set if you need to compensate for fixed header
+  // Smooth scroll helpers
   function scrollToTopSmooth() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function scrollToElementSmooth(el) {
     if (!el) return;
-    const top = (window.pageYOffset || 0) + el.getBoundingClientRect().top - SCROLL_OFFSET;
-    window.scrollTo({ top, behavior: 'smooth' });
+    // Если у вас фиксированный sidebar высотой H, можно вычитать offset
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // bind nav clicks (prevent navigation)
-  function bindNavClicks() {
-    const links = getNavLinks();
-    links.forEach(a => {
-      a.addEventListener('click', function (ev) {
-        const page = a.dataset.page;
-        // prevent default navigation always for these ids
-        if (page === 'main' || page === 'catalog' || page === 'gallery') {
-          ev.preventDefault();
-          ev.stopPropagation && ev.stopPropagation();
-        } else {
-          // do default for other links
-          return;
-        }
+  // Основная обработка клика по навигации
+  function onNavClick(e) {
+    // перехватываем любые клики на .nav a (включая с модификаторами) — предотвращаем переход
+    e.preventDefault();
+    e.stopPropagation();
 
-        if (page === 'main') {
-          setActive('main');
-          scrollToTopSmooth();
-          setTimeout(decideActive, 450);
-        } else if (page === 'catalog') {
-          setTimeout(() => {
-            const target = firstElementOfFirstCatalogRow() || $('.catalog') || $('.grid');
-            if (target) {
-              setActive('catalog');
-              scrollToElementSmooth(target);
-              setTimeout(decideActive, 450);
-            }
-          }, 30);
-        } else if (page === 'gallery') {
-          setTimeout(() => {
-            const target = firstElementOfFirstGalleryRow() || $('.gallery') || $('.gallery-grid');
-            if (target) {
-              setActive('gallery');
-              scrollToElementSmooth(target);
-              setTimeout(decideActive, 450);
-            }
-          }, 30);
-        }
-      }, { passive: false });
-    });
-  }
+    const a = e.currentTarget || e.target;
+    if (!a) return;
 
-  // initialize
-  function init() {
-    const containers = [catalogGrid, galleryGrid, hero, heroPair].filter(Boolean);
-    const waiters = containers.map(c => waitForImages(c));
-    Promise.all(waiters).then(() => {
-      requestAnimationFrame(decideActive);
-      setTimeout(decideActive, 120);
-    });
+    const page = (a.dataset && a.dataset.page) ? a.dataset.page : null;
 
-    bindNavClicks();
-
-    // rAF scroll handler
-    let rafId = null;
-    const onScroll = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(decideActive);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-
-    // debounced resize
-    let resizeTimer = null;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => decideActive(), 160);
-    });
-
-    // mutation observer for grid changes
-    const observerTarget = catalogGrid || galleryGrid;
-    if (observerTarget) {
-      const mo = new MutationObserver(() => { setTimeout(decideActive, 80); });
-      mo.observe(observerTarget, { childList: true, subtree: true });
+    if (page === 'main') {
+      setActiveNav('main');
+      scrollToTopSmooth();
+      try { history.pushState(null, '', 'index.html'); } catch (err) {}
+      // Re-evaluate nav state after scroll settles
+      setTimeout(() => { if (window.__decideNavActive) window.__decideNavActive(); }, 450);
+      return;
     }
 
-    // initial active from hash if any
-    (function setInitial() {
-      const hash = window.location.hash || '';
-      if (hash.includes('gallery')) setActive('gallery');
-      else if (hash.includes('catalog')) setActive('catalog');
-      else setActive('main');
-    })();
+    if (page === 'catalog') {
+      setActiveNav('catalog');
+      // Найдём первую ноду первой строки каталога и прокрутим к ней
+      const catalogGrid = document.querySelector(catalogGridSelector);
+      const target = firstElementOfFirstRow(catalogGrid) || document.querySelector('.catalog') || document.querySelector('.grid');
+      if (target) scrollToElementSmooth(target);
+      try { history.pushState(null, '', 'index.html#catalog'); } catch (err) {}
+      setTimeout(() => { if (window.__decideNavActive) window.__decideNavActive(); }, 450);
+      return;
+    }
+
+    if (page === 'gallery') {
+      setActiveNav('gallery');
+      const galleryGrid = document.querySelector(galleryGridSelector);
+      const target = firstElementOfFirstRow(galleryGrid) || document.querySelector('.gallery') || document.querySelector('.gallery-grid');
+      if (target) scrollToElementSmooth(target);
+      try { history.pushState(null, '', 'index.html#gallery'); } catch (err) {}
+      setTimeout(() => { if (window.__decideNavActive) window.__decideNavActive(); }, 450);
+      return;
+    }
+
+    // Если ссылка непонятная — просто блокируем переход (по твоему запросу не переходим)
+    // Можно добавить поведение по умолчанию, если захочешь.
+    return;
   }
 
-  if (document.readyState === 'complete' || document.readyState === 'interactive') init();
-  else window.addEventListener('DOMContentLoaded', init, { once: true });
+  // Навешиваем обработчики на все элементы .nav a (и делаем это в capture, чтобы перехватить раньше других)
+  function bindNavHandlers() {
+    const links = Array.from(document.querySelectorAll(navLinkSelector));
+    if (!links.length) return;
+    links.forEach(a => {
+      // удаляем старые привязки, если были
+      a.removeEventListener('click', onNavClick, true);
+      a.addEventListener('click', onNavClick, true); // use capture true to be robust
+      // на всякий случай: убираем target чтобы не открывалось в новом окне
+      try { a.removeAttribute('target'); } catch (e) {}
+    });
+  }
 
-  // exposed for debug
-  window.__navDecideActive = decideActive;
+  // Инициализация: ждём DOMContentLoaded чтобы гарантированно найти ссылки
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindNavHandlers, { once: true });
+  } else {
+    bindNavHandlers();
+  }
 
+  // Также наблюдаем за динамическими изменениями nav (вдруг заменяют ссылки)
+  const navRoot = document.querySelector(navRootSelector);
+  if (navRoot) {
+    const mo = new MutationObserver(() => { bindNavHandlers(); });
+    mo.observe(navRoot, { childList: true, subtree: true });
+  }
+
+  // expose small helper to rebind if needed from console
+  window.__bindNavHandlers = bindNavHandlers;
 })();
 </skript>
 </body>
 </html>
+
 
 
 
