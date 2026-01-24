@@ -237,13 +237,25 @@ a:focus:not(.nav a) {
   outline-offset: 2px;
   border-radius: 4px;
 }
-/* Убираем рамку при клике по элементам каталога, но оставляем видимый фокус для клавиатуры */
-.item a:focus {
-  outline: none;            /* убирает рамку при мыши/клике */
+/* remove click outline but keep keyboard focus visible */
+.item a,
+.item a img {
+  -webkit-tap-highlight-color: transparent; /* mobile tap highlight */
 }
 
+/* hide outline/box-shadow when focus comes from mouse/active */
+.item a:focus:not(:focus-visible),
+.item a img:focus:not(:focus-visible),
+.item a:active,
+.item a img:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* show subtle outline when user navigates by keyboard (accessibility) */
 .item a:focus-visible {
-  outline: 2px solid rgba(255,255,255,.12); /* показываем тонкую рамку только при клавиатурном фокусе */
+  outline: 2px solid rgba(255,255,255,.12);
   outline-offset: 2px;
   border-radius: 4px;
 }
