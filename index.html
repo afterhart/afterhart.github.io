@@ -118,22 +118,27 @@
 
 <script>
 // nav-scroll.js
-// Replaces the previous nav/highlight script with direction-aware main activation.
-// - Main becomes active when intro2/intro3 > 50% OR hero (intro1) passes a threshold.
-// - When scrolling down hero threshold = 50% (strict) to avoid spurious activation.
-// - When scrolling up hero threshold = 2% (lenient) so returning to top re-activates Main quickly.
-// - Keeps Catalog/Gallery rules, smooth scroll on nav clicks, and mutation/resize handling.
-//
+// Fresh implementation of navigation active logic + smooth scrolling.
+// Rules implemented exactly as requested:
+// - MAIN becomes active when intro2/intro3 (hero-pair videos) are >50% visible.
+// - MAIN also remains active whenever intro1 (hero) is visible at all (but catalog >50% takes precedence).
+// - CATALOG becomes active when >50% of the FIRST row of catalog items is visible.
+//   It remains active until the FIRST row of the gallery is fully visible.
+// - When scrolling back up, CATALOG becomes active if the LAST row of the catalog is fully visible.
+// - GALLERY becomes active when the FIRST row of gallery items is fully visible.
+// - Only one nav link is active at a time. Smooth underline/scroll preserved.
+// - Nav clicks: main -> top, catalog -> first row of catalog, gallery -> first row of gallery.
 
 (function () {
   'use strict';
 
-  const ROW_EPS = 6; // px tolerance to group items into a row
+  const ROW_EPS = 6; // px tolerance to group items into the same "row"
 
-  // nav links
-  const links = Array.from(document.querySelectorAll('.nav a[data-page]'));
+  // Helper: select nav links with data-page
+  const navLinks = Array.from(document.querySelectorAll('.nav a[data-page]'));
+
   function setActive(page) {
-    links.forEach(a => {
+    navLinks.forEach(a => {
       const isActive = a.dataset.page === page;
       a.classList.toggle('active', isActive);
       if (isActive) a.setAttribute('aria-current', 'page');
@@ -141,17 +146,18 @@
     });
   }
 
-  // DOM references (may be null if section absent)
-  const hero = document.querySelector('.hero'); // intro1
-  const heroPair = document.querySelector('.hero-pair'); // intro2/intro3 wrapper
-  const introVideos = heroPair ? Array.from(heroPair.querySelectorAll('.hero-vertical')) : [];
+  // DOM nodes we will use (may be null)
+  const hero = document.querySelector('.hero');                 // intro1
+  const heroPair = document.querySelector('.hero-pair');       // container intro2/intro3
+  const introElems = heroPair ? Array.from(heroPair.querySelectorAll('.hero-vertical')) : [];
   const catalogGrid = document.querySelector('.catalog .grid') || document.querySelector('.grid');
   const galleryGrid = document.querySelector('.gallery .grid') || document.querySelector('.gallery-grid');
 
+  // viewport helpers
   function rect(el) { return el.getBoundingClientRect(); }
   function vh() { return window.innerHeight || document.documentElement.clientHeight; }
 
-  // fraction of element visible in viewport [0..1]
+  // visible fraction [0..1] of element within viewport
   function visibleFraction(el) {
     if (!el) return 0;
     const r = rect(el);
@@ -160,30 +166,30 @@
     return Math.min(1, overlap / r.height);
   }
 
-  // group items into rows by top coordinate (returns array of rows, each row is array of elements)
+  // Group a set of items into rows by top coordinate (accounts for responsive columns)
   function rowsFromItems(items) {
     if (!items || !items.length) return [];
     const list = items.map(it => ({ el: it, top: Math.round(rect(it).top) }));
-    list.sort((a,b) => a.top - b.top);
+    list.sort((a, b) => a.top - b.top);
     const rows = [];
-    list.forEach(r => {
-      if (!rows.length) rows.push([r.el]);
+    list.forEach(entry => {
+      if (!rows.length) rows.push([entry.el]);
       else {
         const lastTop = Math.round(rect(rows[rows.length - 1][0]).top);
-        if (Math.abs(r.top - lastTop) <= ROW_EPS) rows[rows.length - 1].push(r.el);
-        else rows.push([r.el]);
+        if (Math.abs(entry.top - lastTop) <= ROW_EPS) rows[rows.length - 1].push(entry.el);
+        else rows.push([entry.el]);
       }
     });
     return rows;
   }
 
-  function allFullyVisible(elements) {
-    if (!elements || !elements.length) return false;
-    return elements.every(el => visibleFraction(el) >= 0.999);
-  }
   function avgVisible(elements) {
     if (!elements || !elements.length) return 0;
     return elements.reduce((s, el) => s + visibleFraction(el), 0) / elements.length;
+  }
+  function allFullyVisible(elements) {
+    if (!elements || !elements.length) return false;
+    return elements.every(el => visibleFraction(el) >= 0.999);
   }
 
   function getCatalogRows() {
@@ -193,16 +199,18 @@
   }
   function getGalleryRows() {
     if (!galleryGrid) return [];
+    // gallery might use .gallery-item figures or .item
     const items = Array.from(galleryGrid.querySelectorAll('.gallery-item, .item'));
     return rowsFromItems(items);
   }
 
-  // scroll direction tracking
-  let lastScrollY = (window.pageYOffset || 0);
+  // track scroll direction
+  let lastScrollY = window.pageYOffset || 0;
 
+  // Core decision logic (single source of truth)
   function decideActive() {
     const heroFrac = hero ? visibleFraction(hero) : 0;
-    const introFracs = introVideos.length ? introVideos.map(v => visibleFraction(v)) : [];
+    const introFracs = introElems.length ? introElems.map(e => visibleFraction(e)) : [];
     const maxIntroFrac = introFracs.length ? Math.max(...introFracs) : 0;
 
     const catalogRows = getCatalogRows();
@@ -213,8 +221,6 @@
     const firstGalleryRow = galleryRows.length ? galleryRows[0] : [];
 
     const avgFirstCatalog = avgVisible(firstCatalogRow);
-    const avgFirstGallery = avgVisible(firstGalleryRow);
-
     const firstGalleryFully = firstGalleryRow.length ? allFullyVisible(firstGalleryRow) : false;
     const lastCatalogFully = lastCatalogRow.length ? allFullyVisible(lastCatalogRow) : false;
 
@@ -222,79 +228,81 @@
     const direction = currentY > lastScrollY ? 'down' : (currentY < lastScrollY ? 'up' : 'none');
     lastScrollY = currentY;
 
-    // direction-aware threshold for hero (intro1):
-    // - when scrolling down be strict (require 50%)
-    // - when scrolling up be lenient (2%) so returning to top highlights main quickly
-    const heroThreshold = (direction === 'up') ? 0.02 : 0.5;
+    // Apply priority in a deterministic order so only one page is active.
 
-    // 1) MAIN: if intro2/3 >50% OR hero visible above threshold => main
-    if (maxIntroFrac > 0.5 || heroFrac > heroThreshold) {
+    // 1) MAIN if any intro2/3 is >50% visible
+    if (maxIntroFrac > 0.5) {
       setActive('main');
       return;
     }
 
-    // 2) GALLERY: if first gallery row >50% visible OR fully visible => gallery
-    if (firstGalleryRow.length && avgFirstGallery > 0.5) {
-      setActive('gallery');
-      return;
-    }
-    if (firstGalleryFully) {
-      setActive('gallery');
-      return;
-    }
-
-    // 3) CATALOG: if more than half of first catalog row is visible => catalog
+    // 2) CATALOG if more than half of the FIRST catalog row is visible
     if (firstCatalogRow.length && avgFirstCatalog > 0.5) {
       setActive('catalog');
       return;
     }
 
-    // 4) Scrolling up: if last catalog row fully visible => catalog
+    // 3) GALLERY if the FIRST gallery row is fully visible
+    //    (catalog should remain active until gallery's first row becomes fully visible)
+    if (firstGalleryRow.length && firstGalleryFully) {
+      setActive('gallery');
+      return;
+    }
+
+    // 4) When scrolling up: if the LAST catalog row is fully visible -> CATALOG
     if (direction === 'up' && lastCatalogFully) {
       setActive('catalog');
       return;
     }
 
-    // Fallback: default to main
+    // 5) If hero (intro1) is visible at all -> MAIN
+    //    (This is lower priority than catalog >50% to avoid stealing when catalog dominates)
+    if (heroFrac > 0) {
+      setActive('main');
+      return;
+    }
+
+    // Fallback: if none of the above match, default to main
     setActive('main');
   }
 
-  // helpers to wait for images in container (so rows are measured correctly)
-  function waitForImagesWithin(container, timeout = 1000) {
+  // Wait for images inside a container to load (so measurements are accurate)
+  function waitForImages(container, timeout = 1000) {
     if (!container) return Promise.resolve();
     const imgs = Array.from(container.querySelectorAll('img'));
     if (!imgs.length) return Promise.resolve();
-    const promises = imgs.map(img => img.complete ? Promise.resolve() : new Promise(res => {
-      img.addEventListener('load', res, { once: true });
-      img.addEventListener('error', res, { once: true });
-    }));
-    return Promise.race([Promise.all(promises), new Promise(res => setTimeout(res, timeout))]);
+    const ps = imgs.map(img => (img.complete ? Promise.resolve() : new Promise(r => {
+      img.addEventListener('load', r, { once: true });
+      img.addEventListener('error', r, { once: true });
+    }))));
+    return Promise.race([Promise.all(ps), new Promise(r => setTimeout(r, timeout))]);
   }
 
-  // helpers to pick scroll targets
+  // Scroll target helpers
   function firstElementOfFirstCatalogRow() {
     const rows = getCatalogRows();
-    if (!rows.length || !rows[0].length) return null;
-    return rows[0][0];
+    return (rows.length && rows[0].length) ? rows[0][0] : null;
   }
   function firstElementOfFirstGalleryRow() {
     const rows = getGalleryRows();
-    if (!rows.length || !rows[0].length) return null;
-    return rows[0][0];
+    return (rows.length && rows[0].length) ? rows[0][0] : null;
   }
 
-  // smooth scroll helpers
+  // Smooth scroll helpers (adjust offset if you have fixed header/sidebar)
+  const SCROLL_OFFSET = 0; // change if needed (px)
   function scrollToTopSmooth() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   function scrollToElementSmooth(el) {
     if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // compute top with offset to accommodate fixed sidebar/header if necessary
+    const top = (window.pageYOffset || 0) + el.getBoundingClientRect().top - SCROLL_OFFSET;
+    window.scrollTo({ top, behavior: 'smooth' });
   }
 
-  // bind clicks for nav items (prevent default navigation and perform smooth scroll)
-  function bindNavClicks() {
-    links.forEach(a => {
+  // Bind nav clicks to smooth scroll and prevent navigation
+  function bindNavClickHandlers() {
+    navLinks.forEach(a => {
       a.addEventListener('click', function (ev) {
         const page = a.dataset.page;
         if (page === 'main') {
@@ -302,18 +310,20 @@
           setActive('main');
           scrollToTopSmooth();
           try { history.pushState(null, '', 'index.html'); } catch (e) {}
-          setTimeout(decideActive, 420);
+          // re-evaluate after animation
+          setTimeout(decideActive, 450);
         } else if (page === 'catalog') {
           ev.preventDefault();
+          // slight delay so layout can stabilize (images may lazy-load)
           setTimeout(() => {
             const target = firstElementOfFirstCatalogRow() || document.querySelector('.catalog') || document.querySelector('.grid');
             if (target) {
               setActive('catalog');
               scrollToElementSmooth(target);
               try { history.pushState(null, '', 'index.html#catalog'); } catch (e) {}
-              setTimeout(decideActive, 420);
+              setTimeout(decideActive, 450);
             }
-          }, 30);
+          }, 40);
         } else if (page === 'gallery') {
           ev.preventDefault();
           setTimeout(() => {
@@ -322,27 +332,30 @@
               setActive('gallery');
               scrollToElementSmooth(target);
               try { history.pushState(null, '', 'index.html#gallery'); } catch (e) {}
-              setTimeout(decideActive, 420);
+              setTimeout(decideActive, 450);
             }
-          }, 30);
+          }, 40);
         } else {
-          // allow normal navigation for other links
+          // allow default for other navs
         }
       });
     });
   }
 
-  // init: wait for images then bind handlers
-  function initAndBind() {
+  // Initialize: wait for images, then attach handlers and run initial check
+  function init() {
     const containers = [catalogGrid, galleryGrid, hero, heroPair].filter(Boolean);
-    const waiters = containers.map(c => waitForImagesWithin(c));
+    const waiters = containers.map(c => waitForImages(c));
     Promise.all(waiters).then(() => {
+      // initial evaluation (after layout stable)
       requestAnimationFrame(decideActive);
       setTimeout(decideActive, 120);
     });
 
-    bindNavClicks();
+    // bind nav handlers
+    bindNavClickHandlers();
 
+    // scroll handler using rAF for performance
     let rafId = null;
     const onScroll = () => {
       if (rafId) cancelAnimationFrame(rafId);
@@ -350,44 +363,40 @@
     };
     window.addEventListener('scroll', onScroll, { passive: true });
 
+    // recalc after resize (debounced)
+    let resizeTimer = null;
     window.addEventListener('resize', () => {
-      clearTimeout(window.__catalogResizeTimer);
-      window.__catalogResizeTimer = setTimeout(decideActive, 180);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => decideActive(), 160);
     });
 
+    // watch for changes in grid children (in case items are added/removed)
     const observerTarget = catalogGrid || galleryGrid;
     if (observerTarget) {
       const mo = new MutationObserver(() => { setTimeout(decideActive, 80); });
       mo.observe(observerTarget, { childList: true, subtree: true });
     }
+
+    // set initial active based on URL/hash
+    (function setInitialFromUrl() {
+      const hash = window.location.hash || '';
+      if (hash.includes('gallery')) setActive('gallery');
+      else if (hash.includes('catalog')) setActive('catalog');
+      else setActive('main');
+    })();
   }
 
-  // set initial active based on URL
-  function mapPathToPage(p) {
-    if (!p || p === '/' || p === '/index.html') return 'main';
-    const name = p.split('/').pop().toLowerCase();
-    if (name === 'index.html' || name === '') return 'main';
-    if (name.startsWith('index.html#')) {
-      if (name.includes('#catalog')) return 'catalog';
-      if (name.includes('#gallery')) return 'gallery';
-    }
-    return name.replace('.html', '');
-  }
-  setActive(mapPathToPage(window.location.pathname + (window.location.hash || '')));
-
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    initAndBind();
-  } else {
-    window.addEventListener('DOMContentLoaded', initAndBind, { once: true });
-  }
+  // Start
+  if (document.readyState === 'complete' || document.readyState === 'interactive') init();
+  else window.addEventListener('DOMContentLoaded', init, { once: true });
 
   // expose for debugging
-  window.__decideNavActive = decideActive;
-
+  window.__navDecideActive = decideActive;
 })();
-</script>
+</skript>
 </body>
 </html>
+
 
 
 
