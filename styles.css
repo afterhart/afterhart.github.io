@@ -259,3 +259,8 @@ a:focus:not(.nav a) {
   outline-offset: 2px;
   border-radius: 4px;
 }
+
+/* чуть больше пространства между каталогом и галереей */
+.gallery {
+  margin-top: 32px; /* подкорректируй 32px на 24px/40px по вкусу */
+}
