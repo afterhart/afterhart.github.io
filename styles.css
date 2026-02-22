@@ -260,6 +260,10 @@ a:focus:not(.nav a) {
   border-radius: 4px;
 }
 
+
+.sucka {
+color: grey;
+}
 /* чуть больше пространства между каталогом и галереей */
 .gallery {
   margin-top: 32px; /* подкорректируй 32px на 24px/40px по вкусу */
